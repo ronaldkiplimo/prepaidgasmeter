@@ -6,6 +6,19 @@ import { useAuth } from '../context/AuthContext'
 
 const QUICK_AMOUNTS = [100, 200, 500, 1000, 2000, 5000]
 
+function formatApiError(data) {
+  if (!data) return 'Purchase failed'
+  if (typeof data === 'string') return data
+  if (data.detail) return data.detail
+
+  return Object.entries(data)
+    .map(([field, value]) => {
+      const message = Array.isArray(value) ? value.join(', ') : String(value)
+      return `${field.replace(/_/g, ' ')}: ${message}`
+    })
+    .join('\n') || 'Purchase failed'
+}
+
 export default function Purchase() {
   const { user } = useAuth()
   const [meters, setMeters] = useState([])
@@ -34,13 +47,13 @@ export default function Purchase() {
     try {
       const { data } = await paymentsAPI.purchase({
         meter_id: form.meter_id,
-        amount: form.amount,
-        phone_number: form.phone_number || undefined,
+        amount: Number(form.amount),
+        phone_number: form.phone_number.trim() || undefined,
       })
       setResult(data)
       toast.success('STK Push sent! Check your phone to confirm payment.')
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Purchase failed')
+      toast.error(formatApiError(err.response?.data))
     } finally {
       setSubmitting(false)
     }

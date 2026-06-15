@@ -48,13 +48,15 @@ class PurchaseTokenSerializer(serializers.Serializer):
             normalized = "254" + normalized[1:]
         elif normalized.startswith("+"):
             normalized = normalized[1:]
+        if not normalized.isdigit() or len(normalized) < 10 or len(normalized) > 15:
+            raise serializers.ValidationError("Enter a valid M-Pesa phone number.")
         return normalized
 
     def create(self, validated_data):
         user = self.context["request"].user
         meter = self.context["meter"]
         amount = validated_data["amount"]
-        phone = validated_data.get("phone_number") or user.phone_number
+        phone = validated_data.get("phone_number") or self.validate_phone_number(user.phone_number)
 
         reference = f"TXN{uuid.uuid4().hex[:12].upper()}"
 
@@ -80,7 +82,7 @@ class PurchaseTokenSerializer(serializers.Serializer):
                 phone_number=phone,
                 amount=float(amount),
                 account_reference=reference,
-                transaction_desc=f"Token purchase {meter.meter_number}",
+                transaction_desc=f"Gas token purchase {meter.meter_number}",
             )
             payment.checkout_request_id = stk_response.get("CheckoutRequestID", "")
             payment.merchant_request_id = stk_response.get("MerchantRequestID", "")
@@ -101,6 +103,8 @@ class PurchaseTokenSerializer(serializers.Serializer):
             txn.save(update_fields=["status", "failure_reason", "updated_at"])
             payment.status = Payment.Status.FAILED
             payment.save(update_fields=["status", "updated_at"])
+            if isinstance(exc, ValueError):
+                raise serializers.ValidationError({"detail": str(exc)})
             raise serializers.ValidationError({"detail": "Failed to initiate M-Pesa payment. Please try again."})
 
         return txn

@@ -48,6 +48,16 @@ class MpesaService:
         transaction_desc: str,
     ) -> dict:
         """Initiate M-Pesa STK Push payment."""
+        if (
+            not self.consumer_key
+            or not self.consumer_secret
+            or not self.passkey
+            or self.consumer_key.startswith("your-")
+            or self.consumer_secret.startswith("your-")
+            or self.passkey.startswith("your-")
+        ):
+            raise ValueError("M-Pesa credentials are not configured. Update backend/.env before purchasing.")
+
         access_token = self._get_access_token()
         password, timestamp = self._generate_password()
 
