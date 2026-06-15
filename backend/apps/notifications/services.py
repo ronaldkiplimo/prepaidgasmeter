@@ -55,19 +55,19 @@ class NotificationService:
     def notify_token_delivery(cls, user, token_obj, transaction) -> None:
         """Send token via SMS and email."""
         sms_message = (
-            f"Your prepaid token for meter {token_obj.meter_number}:\n"
+            f"Your prepaid gas token for meter {token_obj.meter_number}:\n"
             f"Token: {token_obj.token}\n"
-            f"Units: {token_obj.token_units} kWh\n"
+            f"Units: {token_obj.token_units}\n"
             f"Amount: KES {token_obj.token_amount}\n"
             f"Ref: {transaction.reference}"
         )
-        email_subject = f"Electricity Token - {transaction.reference}"
+        email_subject = f"Gas Meter Token - {transaction.reference}"
         email_message = (
             f"Dear {user.display_name},\n\n"
-            f"Your electricity token purchase was successful.\n\n"
+            f"Your gas token purchase was successful.\n\n"
             f"Meter Number: {token_obj.meter_number}\n"
             f"Token: {token_obj.token}\n"
-            f"Units: {token_obj.token_units} kWh\n"
+            f"Units: {token_obj.token_units}\n"
             f"Amount Paid: KES {token_obj.token_amount}\n"
             f"M-Pesa Ref: {transaction.payment.mpesa_receipt_number if hasattr(transaction, 'payment') else 'N/A'}\n"
             f"Transaction Ref: {transaction.reference}\n\n"

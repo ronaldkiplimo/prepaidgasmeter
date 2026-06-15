@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PrepaidMeter'),
+        title: const Text('PrepaidGasMeter'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.dashboard), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.electric_meter), label: 'Meters'),
+          NavigationDestination(icon: Icon(Icons.local_fire_department), label: 'Meters'),
           NavigationDestination(icon: Icon(Icons.payment), label: 'Buy'),
           NavigationDestination(icon: Icon(Icons.receipt_long), label: 'Txns'),
           NavigationDestination(icon: Icon(Icons.token), label: 'Tokens'),

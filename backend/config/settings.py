@@ -135,8 +135,8 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Prepaid Electricity Token Vending API",
-    "DESCRIPTION": "Production API for prepaid electricity token purchases via M-Pesa and Stron Vending.",
+    "TITLE": "Prepaid Gas Meter API",
+    "DESCRIPTION": "Production API for prepaid gas meter token purchases via M-Pesa and Stron Vending.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,

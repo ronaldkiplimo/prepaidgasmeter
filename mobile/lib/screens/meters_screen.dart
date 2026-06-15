@@ -80,7 +80,7 @@ class _MetersScreenState extends State<MetersScreen> {
                   final m = _meters[i];
                   return Card(
                     child: ListTile(
-                      leading: const Icon(Icons.electric_meter),
+                      leading: const Icon(Icons.local_fire_department),
                       title: Text(m['nickname'] ?? m['meter_number']),
                       subtitle: Text(m['meter_number']),
                       trailing: m['is_primary'] == true ? const Chip(label: Text('Primary')) : null,

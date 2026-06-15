@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class StronVendingService:
-    """Stron Vending API integration for electricity token generation."""
+    """Stron Vending API integration for gas meter token generation."""
 
     def __init__(self):
         self.base_url = settings.STRON_API_URL.rstrip("/")
@@ -41,7 +41,7 @@ class StronVendingService:
         transaction_reference: str,
         phone_number: str,
     ) -> dict:
-        """Generate prepaid electricity token via Stron Vending API."""
+        """Generate prepaid gas meter token via Stron Vending API."""
         url = f"{self.base_url}/tokens/vend"
         payload = {
             "merchant_id": self.merchant_id,

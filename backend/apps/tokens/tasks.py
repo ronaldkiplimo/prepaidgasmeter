@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=30)
 def generate_token_task(self, transaction_id: str):
-    """Generate electricity token via Stron API after payment confirmation."""
+    """Generate gas meter token via Stron API after payment confirmation."""
     try:
         txn = Transaction.objects.select_related("meter", "user").get(id=transaction_id)
     except Transaction.DoesNotExist:

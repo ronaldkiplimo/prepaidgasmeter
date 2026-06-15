@@ -39,12 +39,12 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(Icons.bolt, size: 64, color: Theme.of(context).colorScheme.primary),
+              Icon(Icons.local_fire_department, size: 64, color: Theme.of(context).colorScheme.primary),
               const SizedBox(height: 16),
-              Text('PrepaidMeter', textAlign: TextAlign.center,
+              Text('PrepaidGasMeter', textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('Buy electricity tokens via M-Pesa', textAlign: TextAlign.center,
+              Text('Top up your gas meter via M-Pesa', textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.grey.shade600)),
               const SizedBox(height: 32),
               TextField(

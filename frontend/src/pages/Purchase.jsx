@@ -51,13 +51,13 @@ export default function Purchase() {
   return (
     <div className="max-w-xl mx-auto">
       <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Buy Electricity Token</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Buy Gas Token</h1>
         <p className="text-gray-500">Pay via M-Pesa STK Push</p>
       </div>
 
       {meters.length === 0 ? (
         <div className="card text-center py-8">
-          <p className="text-gray-500">Add a meter before purchasing tokens.</p>
+          <p className="text-gray-500">Add a gas meter before purchasing tokens.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="card space-y-6">
@@ -108,7 +108,7 @@ export default function Purchase() {
           <p className="text-sm text-green-700">Reference: {result.reference}</p>
           <p className="text-sm text-green-700">Status: {result.status.replace(/_/g, ' ')}</p>
           <p className="text-sm text-green-600 mt-2">
-            Confirm the payment on your phone. Your token will be sent via SMS and email once payment is confirmed.
+            Confirm the payment on your phone. Your gas token will be sent via SMS and email once payment is confirmed.
           </p>
         </div>
       )}

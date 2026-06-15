@@ -17,7 +17,7 @@ class PrepaidMeterApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => AuthProvider()..init(),
       child: MaterialApp(
-        title: 'PrepaidMeter',
+        title: 'PrepaidGasMeter',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(

@@ -18,7 +18,7 @@ export default function TokenHistory() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Token History</h1>
-        <p className="text-gray-500">Your generated electricity tokens</p>
+        <p className="text-gray-500">Your generated gas meter tokens</p>
       </div>
 
       <div className="space-y-4">
@@ -29,7 +29,7 @@ export default function TokenHistory() {
                 <p className="text-sm text-gray-500">Meter: {t.meter_number}</p>
                 <p className="font-mono text-lg font-bold text-primary-700 mt-1 tracking-wider">{t.token}</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {t.token_units} kWh · KES {t.token_amount} · Ref: {t.transaction_reference}
+                  {t.token_units} units · KES {t.token_amount} · Ref: {t.transaction_reference}
                 </p>
               </div>
               <span className={`text-xs px-2 py-1 rounded-full ${

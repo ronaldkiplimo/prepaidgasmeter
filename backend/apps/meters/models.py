@@ -5,11 +5,11 @@ from django.db import models
 
 
 class Meter(models.Model):
-    """Customer electricity meter registered on the platform."""
+    """Customer gas meter registered on the platform."""
 
     class MeterType(models.TextChoices):
-        SINGLE_PHASE = "single_phase", "Single Phase"
-        THREE_PHASE = "three_phase", "Three Phase"
+        RESIDENTIAL = "residential", "Residential"
+        COMMERCIAL = "commercial", "Commercial"
         PREPAID = "prepaid", "Prepaid"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -26,7 +26,7 @@ class Meter(models.Model):
         choices=MeterType.choices,
         default=MeterType.PREPAID,
     )
-    utility_provider = models.CharField(max_length=100, default="Kenya Power")
+    utility_provider = models.CharField(max_length=100, default="Gas Provider")
     location = models.CharField(max_length=255, blank=True)
     is_active = models.BooleanField(default=True)
     is_primary = models.BooleanField(default=False)

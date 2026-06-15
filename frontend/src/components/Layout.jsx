@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 const navItems = [
   { to: '/', label: 'Dashboard', end: true },
   { to: '/meters', label: 'My Meters' },
-  { to: '/purchase', label: 'Buy Token' },
+  { to: '/purchase', label: 'Buy Gas' },
   { to: '/transactions', label: 'Transactions' },
   { to: '/tokens', label: 'Token History' },
 ]
@@ -24,7 +24,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center gap-8">
-              <span className="text-xl font-bold text-primary-700">⚡ PrepaidMeter</span>
+              <span className="text-xl font-bold text-primary-700">PrepaidGasMeter</span>
               <div className="hidden md:flex gap-1">
                 {navItems.map((item) => (
                   <NavLink

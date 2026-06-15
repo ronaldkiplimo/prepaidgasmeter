@@ -57,7 +57,7 @@ class _TokensScreenState extends State<TokensScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text('${t['token_units']} kWh · KES ${t['token_amount']}'),
+                        Text('${t['token_units']} units · KES ${t['token_amount']}'),
                         Text('Ref: ${t['transaction_reference']}', style: const TextStyle(fontSize: 12)),
                         const SizedBox(height: 4),
                         Text(

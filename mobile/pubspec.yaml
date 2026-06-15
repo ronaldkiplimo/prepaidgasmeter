@@ -1,5 +1,5 @@
 name: prepaidgasmeter
-description: Prepaid electricity token vending mobile app
+description: Prepaid gas meter mobile app
 publish_to: 'none'
 version: 1.0.0+1
 

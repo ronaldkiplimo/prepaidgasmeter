@@ -28,8 +28,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-600 to-primary-800 px-4">
       <div className="card w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">⚡ PrepaidMeter</h1>
-          <p className="text-gray-500 mt-2">Sign in to buy electricity tokens</p>
+          <h1 className="text-2xl font-bold text-gray-900">PrepaidGasMeter</h1>
+          <p className="text-gray-500 mt-2">Sign in to top up your gas meter</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

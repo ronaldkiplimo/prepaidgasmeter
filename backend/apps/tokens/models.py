@@ -4,7 +4,7 @@ from django.db import models
 
 
 class ElectricityToken(models.Model):
-    """Generated prepaid electricity token."""
+    """Generated prepaid gas meter token."""
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

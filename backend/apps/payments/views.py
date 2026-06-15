@@ -19,7 +19,7 @@ class PurchaseTokenView(generics.CreateAPIView):
     serializer_class = PurchaseTokenSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    @extend_schema(tags=["Tokens"], summary="Purchase electricity token via M-Pesa STK Push")
+    @extend_schema(tags=["Tokens"], summary="Purchase gas meter token via M-Pesa STK Push")
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -50,7 +50,7 @@ export default function Meters() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Meters</h1>
-          <p className="text-gray-500">Manage your registered electricity meters</p>
+          <p className="text-gray-500">Manage your registered gas meters</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="btn-primary">
           {showForm ? 'Cancel' : 'Add Meter'}

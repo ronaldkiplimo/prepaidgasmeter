@@ -39,7 +39,7 @@ export default function Register() {
       <div className="card w-full max-w-lg">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-500 mt-2">Register to start buying tokens</p>
+          <p className="text-gray-500 mt-2">Register to start topping up your gas meter</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">

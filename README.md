@@ -1,6 +1,6 @@
-# Prepaid Electricity Token Vending Platform
+# Prepaid Gas Meter Platform
 
-Production-ready platform for purchasing prepaid electricity tokens via M-Pesa STK Push, with token generation through the Stron Vending API.
+Production-ready platform for topping up prepaid gas meters via M-Pesa STK Push, with meter token generation through the Stron Vending API.
 
 ## Architecture
 
@@ -28,18 +28,18 @@ Production-ready platform for purchasing prepaid electricity tokens via M-Pesa S
 | Frontend | React 18, Vite, TailwindCSS |
 | Mobile | Flutter 3 |
 | Payments | M-Pesa Daraja STK Push |
-| Vending | Stron Vending API |
+| Gas meter vending | Stron Vending API |
 | Docs | drf-spectacular (OpenAPI/Swagger) |
 | Deployment | Docker Compose, GitHub Actions CI/CD |
 
 ## Features
 
 - User registration and JWT authentication (phone number login)
-- Multiple meter management per user
+- Multiple gas meter management per user
 - M-Pesa STK Push payment initiation
 - Payment webhook verification with idempotency
-- Async token generation via Stron Vending API
-- SMS and email token delivery notifications
+- Async gas meter token generation via Stron Vending API
+- SMS and email gas token delivery notifications
 - Transaction history and token history
 - Admin dashboard with revenue and audit stats
 - Immutable audit logging
@@ -51,7 +51,7 @@ Production-ready platform for purchasing prepaid electricity tokens via M-Pesa S
 
 - Docker and Docker Compose
 - M-Pesa Daraja sandbox credentials
-- Stron Vending API credentials
+- Stron Vending API credentials for gas meter vending
 
 ### 1. Clone and configure
 
@@ -118,7 +118,7 @@ flutter run --dart-define=API_URL=http://10.0.2.2:8000/api/v1
 | POST | `/api/v1/auth/logout/` | Logout (blacklist token) |
 | GET | `/api/v1/auth/profile/` | User profile |
 | GET/POST | `/api/v1/meters/` | List/add meters |
-| POST | `/api/v1/payments/purchase/` | Initiate token purchase |
+| POST | `/api/v1/payments/purchase/` | Initiate gas token purchase |
 | GET | `/api/v1/payments/transactions/` | Transaction history |
 | POST | `/api/v1/payments/mpesa/callback/` | M-Pesa webhook |
 | GET | `/api/v1/tokens/history/` | Token history |
@@ -132,8 +132,8 @@ flutter run --dart-define=API_URL=http://10.0.2.2:8000/api/v1
 2. Backend creates transaction and initiates M-Pesa STK Push
 3. User confirms payment on phone
 4. M-Pesa sends callback → `POST /payments/mpesa/callback/`
-5. Celery task calls Stron API to generate token
-6. Celery task sends SMS + email with token
+5. Celery task calls Stron API to generate the gas meter token
+6. Celery task sends SMS + email with the token
 7. Transaction marked as completed
 
 ## Database Schema

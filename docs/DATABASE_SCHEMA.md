@@ -1,6 +1,6 @@
 # Database Schema
 
-PostgreSQL schema for the Prepaid Electricity Token Vending Platform.
+PostgreSQL schema for the Prepaid Gas Meter Platform.
 
 ## Entity Relationship Diagram
 
@@ -134,7 +134,7 @@ Extended Django auth user. Phone number is the login identifier.
 | updated_at | TIMESTAMPTZ | AUTO |
 
 ### meters
-Customer electricity meters. Soft-deleted via `is_active`.
+Customer gas meters. Soft-deleted via `is_active`.
 
 | Column | Type | Constraints |
 |--------|------|-------------|
@@ -143,8 +143,8 @@ Customer electricity meters. Soft-deleted via `is_active`.
 | meter_number | VARCHAR(20) | NOT NULL, INDEX |
 | account_number | VARCHAR(30) | |
 | nickname | VARCHAR(100) | |
-| meter_type | VARCHAR(20) | single_phase, three_phase, prepaid |
-| utility_provider | VARCHAR(100) | DEFAULT 'Kenya Power' |
+| meter_type | VARCHAR(20) | residential, commercial, prepaid |
+| utility_provider | VARCHAR(100) | DEFAULT 'Gas Provider' |
 | location | VARCHAR(255) | |
 | is_active | BOOLEAN | DEFAULT TRUE |
 | is_primary | BOOLEAN | DEFAULT FALSE |
@@ -193,7 +193,7 @@ M-Pesa STK Push payment records (1:1 with transactions).
 | updated_at | TIMESTAMPTZ | AUTO |
 
 ### electricity_tokens
-Generated prepaid tokens from Stron Vending API.
+Generated prepaid gas meter tokens from Stron Vending API.
 
 | Column | Type | Constraints |
 |--------|------|-------------|

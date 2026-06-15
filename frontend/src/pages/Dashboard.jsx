@@ -33,9 +33,9 @@ export default function Dashboard() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500">Manage your meters and buy electricity tokens</p>
+          <p className="text-gray-500">Manage your gas meters and buy prepaid gas tokens</p>
         </div>
-        <Link to="/purchase" className="btn-primary">Buy Token</Link>
+        <Link to="/purchase" className="btn-primary">Buy Gas</Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
