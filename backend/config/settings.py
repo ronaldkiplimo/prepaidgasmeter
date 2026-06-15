@@ -1,4 +1,3 @@
-import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -170,9 +169,13 @@ MPESA_BASE_URL = (
 )
 
 # Stron Vending API
-STRON_API_URL = env("STRON_API_URL", default="https://api.stronpower.com/v1")
-STRON_API_KEY = env("STRON_API_KEY", default="")
-STRON_MERCHANT_ID = env("STRON_MERCHANT_ID", default="")
+STRON_API_URL = env("STRON_API_URL", default="http://www.server-newv.stronpower.com/api")
+STRON_DIRECT_API_URL = env("STRON_DIRECT_API_URL", default="http://www.server-newv.stronpower.com/api")
+STRON_COMPANY_NAME = env("STRON_COMPANY_NAME", default="")
+STRON_USERNAME = env("STRON_USERNAME", default="")
+STRON_PASSWORD = env("STRON_PASSWORD", default="")
+STRON_VEND_BY_UNIT = env.bool("STRON_VEND_BY_UNIT", default=False)
+STRON_USE_DIRECT_VENDING = env.bool("STRON_USE_DIRECT_VENDING", default=False)
 
 # Notifications
 EMAIL_BACKEND = env(

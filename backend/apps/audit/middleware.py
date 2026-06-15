@@ -1,4 +1,3 @@
-import json
 import logging
 
 from .services import log_audit

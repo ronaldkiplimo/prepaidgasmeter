@@ -174,6 +174,14 @@ Required GitHub secrets for deployment:
 
 See [backend/.env.example](backend/.env.example) for all configuration options including M-Pesa, Stron, email, and SMS settings.
 
+Stron vending uses the API contract from `StronApiUserManual-V5.0.0-ForNewVending`: credentials are sent in the JSON body as `CompanyName`, `UserName`, and `PassWord`. Configure:
+
+- `STRON_API_URL` for standard vending, usually `http://www.server-newv.stronpower.com/api`
+- `STRON_DIRECT_API_URL` for direct vending, usually `http://www.server-newv.stronpower.com/api`
+- `STRON_COMPANY_NAME`, `STRON_USERNAME`, `STRON_PASSWORD`
+- `STRON_VEND_BY_UNIT=False` to vend by money, or `True` to vend by units
+- `STRON_USE_DIRECT_VENDING=True` only when using `VendingMeterDirectly`
+
 ## License
 
 MIT

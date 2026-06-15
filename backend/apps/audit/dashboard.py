@@ -1,4 +1,4 @@
-from django.db.models import Count, Sum
+from django.db.models import Sum
 from rest_framework import permissions, views
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema

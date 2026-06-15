@@ -4,7 +4,6 @@ from celery import shared_task
 from django.utils import timezone
 
 from apps.tokens.models import ElectricityToken
-from .models import Notification
 from .services import NotificationService
 
 logger = logging.getLogger(__name__)

@@ -1,7 +1,6 @@
 from rest_framework import generics, permissions
 from drf_spectacular.utils import extend_schema
 
-from apps.payments.models import Transaction
 from apps.payments.serializers import ElectricityTokenSerializer
 from apps.tokens.models import ElectricityToken
 

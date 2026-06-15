@@ -4,7 +4,6 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import transaction as db_transaction
-from django.utils import timezone
 from rest_framework import serializers
 
 from apps.audit.services import log_audit
@@ -12,7 +11,6 @@ from apps.meters.models import Meter
 from apps.payments.models import Payment, Transaction
 from apps.payments.services.mpesa import MpesaService
 from apps.tokens.models import ElectricityToken
-from apps.tokens.tasks import generate_token_task
 
 logger = logging.getLogger(__name__)
 
