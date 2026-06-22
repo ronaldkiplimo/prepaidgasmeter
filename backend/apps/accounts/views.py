@@ -7,6 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from drf_spectacular.utils import extend_schema
 
 from apps.audit.services import log_audit
+from apps.core.permissions import IsAdminRole
 from .tokens import PhoneTokenObtainPairSerializer
 from .serializers import ProfileUpdateSerializer, RegisterSerializer, UserSerializer
 
@@ -116,3 +117,15 @@ class LogoutView(APIView):
         if x_forwarded:
             return x_forwarded.split(",")[0].strip()
         return request.META.get("REMOTE_ADDR")
+
+
+class AdminUserListView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminRole]
+    queryset = User.objects.all()
+    filterset_fields = ["role", "is_verified"]
+    search_fields = ["phone_number", "first_name", "last_name", "email"]
+
+    @extend_schema(tags=["Admin"], summary="Admin: list all users")
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)

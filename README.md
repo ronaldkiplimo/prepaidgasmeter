@@ -1,186 +1,106 @@
-# Prepaid Gas Meter Platform
+# PrepaidGas Kenya
 
-Production-ready platform for topping up prepaid gas meters via M-Pesa STK Push, with meter token generation through the Stron Vending API.
+Production-ready prepaid gas credit vending platform for Kenya. Customers buy gas credit via M-Pesa; the system communicates with **Stron Power** prepaid gas meters through the official Vending API v3.0.17.
 
-## Architecture
+Comparable to M-Gas, UMS Kenya, Kensmart Utilities, QuickMeters, and PayGo Energy.
 
-```
-┌─────────────┐     ┌─────────────┐     ┌──────────────────┐
-│  React Web  │     │ Flutter App │     │  Django REST API │
-│  (Vite)     │────▶│  (Mobile)   │────▶│  + PostgreSQL    │
-└─────────────┘     └─────────────┘     └────────┬─────────┘
-                                                   │
-                    ┌──────────────────────────────┼──────────────────┐
-                    │                              │                  │
-              ┌─────▼─────┐              ┌─────────▼────────┐  ┌─────▼─────┐
-              │  M-Pesa   │              │  Stron Vending   │  │  Celery   │
-              │  Daraja   │              │  API             │  │  + Redis  │
-              └───────────┘              └──────────────────┘  └───────────┘
-```
-
-## Tech Stack
+## Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Django 5, Django REST Framework, SimpleJWT |
+| Frontend | Next.js 15, TypeScript, TailwindCSS, React Query, Zustand |
+| Backend | Django 5, DRF, SimpleJWT, Celery, Redis |
 | Database | PostgreSQL 16 |
-| Task Queue | Celery + Redis |
-| Frontend | React 18, Vite, TailwindCSS |
-| Mobile | Flutter 3 |
-| Payments | M-Pesa Daraja STK Push |
-| Gas meter vending | Stron Vending API |
-| Docs | drf-spectacular (OpenAPI/Swagger) |
-| Deployment | Docker Compose, GitHub Actions CI/CD |
-
-## Features
-
-- User registration and JWT authentication (phone number login)
-- Multiple gas meter management per user
-- M-Pesa STK Push payment initiation
-- Payment webhook verification with idempotency
-- Async gas meter token generation via Stron Vending API
-- SMS and email gas token delivery notifications
-- Transaction history and token history
-- Admin dashboard with revenue and audit stats
-- Immutable audit logging
-- OpenAPI documentation at `/api/docs/`
+| Payments | Safaricom M-Pesa Daraja (STK Push) |
+| Vending | Stron Power API v3.0.17 |
+| SMS | Africa's Talking / Twilio |
+| Email | SendGrid / SMTP |
+| Deploy | Docker, GitHub Actions |
 
 ## Quick Start
 
-### Prerequisites
-
-- Docker and Docker Compose
-- M-Pesa Daraja sandbox credentials
-- Stron Vending API credentials for gas meter vending
-
-### 1. Clone and configure
-
 ```bash
-git clone <repo-url> prepaidgasmeter
-cd prepaidgasmeter
 cp backend/.env.example backend/.env
-# Edit backend/.env with your credentials
-```
-
-### 2. Start with Docker
-
-```bash
+# Configure STRON_* and MPESA_* credentials
 docker compose up -d --build
 ```
 
-Services:
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/api/docs/
-- **Frontend**: http://localhost:3000
-- **PostgreSQL**: localhost:5432
-- **Redis**: localhost:6379
+| Service | URL |
+|---------|-----|
+| Web App | http://localhost:3000 |
+| API | http://localhost:8000 |
+| API Docs | http://localhost:8000/api/docs/ |
+| Stron Swagger | http://www.server-newv.stronpower.com/swagger/docs/v3.0.17 |
 
-### 3. Create admin user
+**Demo credentials** (after seed):
+- Admin: `254700000001` / `Admin@12345`
+- Customer: `254712345678` / `Demo@12345`
 
-```bash
-docker compose exec backend python manage.py createsuperuser
+## Purchase Flow
+
 ```
-
-### Local Development (without Docker)
-
-**Backend:**
-```bash
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-python manage.py migrate
-python manage.py runserver
-# In another terminal:
-celery -A config worker -l info
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**Mobile:**
-```bash
-cd mobile
-flutter pub get
-flutter run --dart-define=API_URL=http://10.0.2.2:8000/api/v1
+Customer enters meter + amount
+  → Stron VendingMeterPreview (units/fees)
+  → M-Pesa STK Push
+  → Callback verification
+  → Stron VendingMeterPurchase
+  → Token saved → SMS + Email → Dashboard updated
 ```
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/auth/register/` | Register user |
-| POST | `/api/v1/auth/login/` | Login (JWT) |
-| POST | `/api/v1/auth/logout/` | Logout (blacklist token) |
-| GET | `/api/v1/auth/profile/` | User profile |
-| GET/POST | `/api/v1/meters/` | List/add meters |
-| POST | `/api/v1/payments/purchase/` | Initiate gas token purchase |
-| GET | `/api/v1/payments/transactions/` | Transaction history |
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/auth/register/` | Register (customer/landlord/distributor) |
+| POST | `/api/v1/auth/login/` | JWT login (phone + password) |
+| GET | `/api/v1/meters/` | List meters |
+| POST | `/api/v1/payments/preview/` | Preview gas units |
+| POST | `/api/v1/payments/purchase/` | Buy via M-Pesa |
 | POST | `/api/v1/payments/mpesa/callback/` | M-Pesa webhook |
 | GET | `/api/v1/tokens/history/` | Token history |
-| GET | `/api/v1/audit/dashboard/` | Admin dashboard stats |
-| GET | `/api/v1/audit/logs/` | Admin audit logs |
-| GET | `/api/docs/` | Swagger UI |
-
-## Purchase Flow
-
-1. User selects meter and amount → `POST /payments/purchase/`
-2. Backend creates transaction and initiates M-Pesa STK Push
-3. User confirms payment on phone
-4. M-Pesa sends callback → `POST /payments/mpesa/callback/`
-5. Celery task calls Stron API to generate the gas meter token
-6. Celery task sends SMS + email with the token
-7. Transaction marked as completed
-
-## Database Schema
-
-See [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) for the full ERD and table definitions.
+| GET | `/api/v1/reports/analytics/` | Admin analytics |
+| POST | `/api/v1/stron/clear-credit/` | Admin: clear meter credit |
+| POST | `/api/v1/stron/clear-tamper/` | Admin: clear tamper |
 
 ## Project Structure
 
 ```
 prepaidgasmeter/
-├── backend/           # Django REST API
-│   ├── apps/
-│   │   ├── accounts/  # User auth
-│   │   ├── meters/    # Meter management
-│   │   ├── payments/  # M-Pesa + transactions
-│   │   ├── tokens/    # Stron vending + tokens
-│   │   ├── notifications/  # SMS + email
-│   │   └── audit/     # Audit logs + admin dashboard
-│   └── config/        # Django settings
-├── frontend/          # React + Vite + TailwindCSS
-├── mobile/            # Flutter app
-├── docs/              # Database schema docs
-├── .github/workflows/ # CI/CD pipelines
+├── backend/          Django REST API
+│   ├── apps/accounts/    Users, roles, customer profiles
+│   ├── apps/core/          Tariffs, system settings, seed data
+│   ├── apps/meters/        Gas meter management
+│   ├── apps/payments/      M-Pesa + transactions
+│   ├── apps/tokens/        Stron vending + gas tokens
+│   ├── apps/notifications/ SMS/email with delivery logs
+│   ├── apps/audit/         Audit logs + admin dashboard
+│   └── apps/reports/       Analytics + sales reports
+├── web/              Next.js 15 customer + admin portal
+├── mobile/           Flutter app (optional)
+├── docs/             Database schema
 └── docker-compose.yml
 ```
 
-## CI/CD
+## Stron Configuration
 
-- **backend.yml** — Python tests, lint, Docker build on push/PR
-- **frontend.yml** — Node build and Docker build
-- **deploy.yml** — Push images to registry and deploy via SSH (requires secrets)
+```env
+STRON_BASE_URL=http://www.server-newv.stronpower.com/api
+STRON_COMPANY_NAME=your-company
+STRON_USERNAME=your-username
+STRON_PASSWORD=your-password
+STRON_VEND_BY_UNIT=false
+```
 
-Required GitHub secrets for deployment:
-- `REGISTRY_URL`, `REGISTRY_USERNAME`, `REGISTRY_PASSWORD`
-- `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`
+## Production Deployment
 
-## Environment Variables
+See `.github/workflows/` for CI/CD. Deploy with Docker Compose on AWS/DigitalOcean behind Nginx + Cloudflare.
 
-See [backend/.env.example](backend/.env.example) for all configuration options including M-Pesa, Stron, email, and SMS settings.
-
-Stron vending uses the API contract from `StronApiUserManual-V5.0.0-ForNewVending`: credentials are sent in the JSON body as `CompanyName`, `UserName`, and `PassWord`. Configure:
-
-- `STRON_API_URL` for standard vending, usually `http://www.server-newv.stronpower.com/api`
-- `STRON_DIRECT_API_URL` for direct vending, usually `http://www.server-newv.stronpower.com/api`
-- `STRON_COMPANY_NAME`, `STRON_USERNAME`, `STRON_PASSWORD`
-- `STRON_VEND_BY_UNIT=False` to vend by money, or `True` to vend by units
-- `STRON_USE_DIRECT_VENDING=True` only when using `VendingMeterDirectly`
+```bash
+docker compose -f docker-compose.yml up -d
+docker compose exec backend python manage.py migrate
+docker compose exec backend python manage.py seed_data
+docker compose exec backend python manage.py createsuperuser
+```
 
 ## License
 

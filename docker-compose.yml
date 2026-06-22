@@ -2,7 +2,7 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: prepaidgasmeter
+      POSTGRES_DB: prepaidgas
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     volumes:
@@ -31,9 +31,10 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/prepaidgasmeter
+      DATABASE_URL: postgres://postgres:postgres@db:5432/prepaidgas
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CORS_ALLOWED_ORIGINS: http://localhost:3000
     volumes:
       - ./backend:/app
     ports:
@@ -50,33 +51,23 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/prepaidgasmeter
+      DATABASE_URL: postgres://postgres:postgres@db:5432/prepaidgas
       CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/0
     volumes:
       - ./backend:/app
     depends_on:
       - backend
       - redis
 
-  celery-beat:
-    build: ./backend
-    command: celery -A config beat -l info
-    env_file:
-      - ./backend/.env
+  web:
+    build:
+      context: ./web
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/prepaidgasmeter
-      CELERY_BROKER_URL: redis://redis:6379/0
-    volumes:
-      - ./backend:/app
-    depends_on:
-      - backend
-      - redis
-
-  frontend:
-    build: ./frontend
+      NEXT_PUBLIC_API_URL: http://backend:8000
     ports:
-      - "3000:80"
+      - "3000:3000"
     depends_on:
       - backend
 

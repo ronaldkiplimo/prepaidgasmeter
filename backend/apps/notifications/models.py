@@ -21,7 +21,11 @@ class Notification(models.Model):
         TOKEN_DELIVERY = "token_delivery", "Token Delivery"
         PAYMENT_CONFIRMATION = "payment_confirmation", "Payment Confirmation"
         PAYMENT_FAILED = "payment_failed", "Payment Failed"
+        LOW_BALANCE = "low_balance", "Low Balance"
+        TAMPER_ALERT = "tamper_alert", "Tamper Alert"
+        METER_OFFLINE = "meter_offline", "Meter Offline"
         WELCOME = "welcome", "Welcome"
+        PASSWORD_RESET = "password_reset", "Password Reset"
         GENERAL = "general", "General"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -57,3 +61,6 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.channel} to {self.recipient} ({self.status})"
+
+
+from .log_models import SMSLog, EmailLog  # noqa: E402, F401

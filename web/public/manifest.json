@@ -1,0 +1,10 @@
+{
+  "name": "PrepaidGas Kenya",
+  "short_name": "PrepaidGas",
+  "description": "Buy prepaid gas credit via M-Pesa",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": []
+}

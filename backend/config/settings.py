@@ -31,12 +31,14 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_filters",
     # Local apps
+    "apps.core",
     "apps.accounts",
     "apps.meters",
     "apps.payments",
     "apps.tokens",
     "apps.notifications",
     "apps.audit",
+    "apps.reports",
 ]
 
 MIDDLEWARE = [
@@ -75,7 +77,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": env.db(
         "DATABASE_URL",
-        default="postgres://postgres:postgres@localhost:5432/prepaidgasmeter",
+        default="postgres://postgres:postgres@localhost:5432/prepaidgas",
     )
 }
 
@@ -134,8 +136,8 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Prepaid Gas Meter API",
-    "DESCRIPTION": "Production API for prepaid gas meter token purchases via M-Pesa and Stron Vending.",
+    "TITLE": "PrepaidGas Kenya API",
+    "DESCRIPTION": "Production API for prepaid gas credit vending via M-Pesa and Stron Power meters.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
@@ -168,30 +170,38 @@ MPESA_BASE_URL = (
     else "https://sandbox.safaricom.co.ke"
 )
 
-# Stron Vending API
-STRON_API_URL = env("STRON_API_URL", default="http://www.server-newv.stronpower.com/api")
-STRON_DIRECT_API_URL = env("STRON_DIRECT_API_URL", default="http://www.server-newv.stronpower.com/api")
+# Stron Power Vending API v3.0.17
+STRON_BASE_URL = env("STRON_BASE_URL", default="http://www.server-newv.stronpower.com/api")
 STRON_COMPANY_NAME = env("STRON_COMPANY_NAME", default="")
 STRON_USERNAME = env("STRON_USERNAME", default="")
 STRON_PASSWORD = env("STRON_PASSWORD", default="")
 STRON_VEND_BY_UNIT = env.bool("STRON_VEND_BY_UNIT", default=False)
-STRON_USE_DIRECT_VENDING = env.bool("STRON_USE_DIRECT_VENDING", default=False)
 
-# Notifications
-EMAIL_BACKEND = env(
-    "EMAIL_BACKEND",
-    default="django.core.mail.backends.console.EmailBackend",
-)
+# Legacy aliases
+STRON_API_URL = STRON_BASE_URL
+STRON_DIRECT_API_URL = STRON_BASE_URL
+
+# SMS — Africa's Talking or Twilio
+SMS_PROVIDER = env("SMS_PROVIDER", default="africas_talking")
+AFRICAS_TALKING_API_KEY = env("AFRICAS_TALKING_API_KEY", default="")
+AFRICAS_TALKING_USERNAME = env("AFRICAS_TALKING_USERNAME", default="")
+TWILIO_ACCOUNT_SID = env("TWILIO_ACCOUNT_SID", default="")
+TWILIO_AUTH_TOKEN = env("TWILIO_AUTH_TOKEN", default="")
+TWILIO_PHONE_NUMBER = env("TWILIO_PHONE_NUMBER", default="")
+SMS_API_URL = env("SMS_API_URL", default="")
+SMS_API_KEY = env("SMS_API_KEY", default="")
+SMS_SENDER_ID = env("SMS_SENDER_ID", default="PrepaidGas")
+
+# Email — SendGrid or SMTP
+EMAIL_PROVIDER = env("EMAIL_PROVIDER", default="smtp")
+SENDGRID_API_KEY = env("SENDGRID_API_KEY", default="")
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@prepaidgasmeter.co.ke")
-
-SMS_API_URL = env("SMS_API_URL", default="")
-SMS_API_KEY = env("SMS_API_KEY", default="")
-SMS_SENDER_ID = env("SMS_SENDER_ID", default="PREPAID")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@prepaidgas.co.ke")
 
 # Business rules
 MIN_PURCHASE_AMOUNT = env.int("MIN_PURCHASE_AMOUNT", default=50)

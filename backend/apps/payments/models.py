@@ -29,6 +29,10 @@ class Transaction(models.Model):
         related_name="transactions",
     )
     amount = models.DecimalField(max_digits=12, decimal_places=2)
+    expected_units = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    expected_credit = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    service_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     status = models.CharField(
         max_length=30,
         choices=Status.choices,
@@ -97,7 +101,7 @@ class Payment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "payments"
+        db_table = "mpesa_transactions"
         ordering = ["-created_at"]
 
     def __str__(self):
