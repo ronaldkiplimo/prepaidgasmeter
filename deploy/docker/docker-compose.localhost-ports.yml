@@ -24,8 +24,8 @@ services:
   web:
     build:
       args:
-        NEXT_PUBLIC_API_URL: http://102.212.245.79
+        NEXT_PUBLIC_API_URL: ""
     environment:
-      NEXT_PUBLIC_API_URL: http://102.212.245.79
+      NEXT_PUBLIC_API_URL: ""
     ports: !override
       - "127.0.0.1:3000:3000"
