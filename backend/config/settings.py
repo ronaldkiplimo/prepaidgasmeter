@@ -44,6 +44,10 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    # Private Network Access helper must run before CORS middleware so that
+    # preflight responses from the CORS middleware can be augmented with the
+    # `Access-Control-Allow-Private-Network` header when needed.
+    "apps.core.middleware.AllowPrivateNetworkMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
