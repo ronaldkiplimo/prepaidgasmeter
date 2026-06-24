@@ -3,6 +3,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 
 from apps.audit.services import log_audit
 from .models import Meter
+from .permissions import IsAdminToCreate
 from .serializers import MeterListSerializer, MeterSerializer
 
 
@@ -15,14 +16,12 @@ from .serializers import MeterListSerializer, MeterSerializer
     destroy=extend_schema(tags=["Meters"], summary="Remove meter"),
 )
 class MeterViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, IsAdminToCreate]
 
     def get_queryset(self):
         user = self.request.user
-        if user.role in ("admin", "distributor") or user.is_superuser:
+        if user.role == "admin" or user.is_superuser:
             return Meter.objects.filter(is_active=True)
-        if user.role == "landlord":
-            return Meter.objects.filter(landlord=user, is_active=True)
         return Meter.objects.filter(user=user, is_active=True)
 
     def get_serializer_class(self):

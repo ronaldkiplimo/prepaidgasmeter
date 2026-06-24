@@ -34,8 +34,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur dark:border-gray-800 dark:bg-gray-950/90">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
           <div className="flex items-center gap-8">
-            <Link href="/dashboard" className="text-xl font-bold text-brand-700">
-              🔥 PrepaidGas Kenya
+            <Link href="/dashboard" className="flex items-center gap-3 text-xl font-bold text-brand-700">
+              <div className="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center text-sm font-bold">PG</div>
+              <span className="text-lg text-brand-700">PrepaidGas Kenya</span>
             </Link>
             <nav className="hidden gap-1 md:flex">
               {nav.map((item) => (

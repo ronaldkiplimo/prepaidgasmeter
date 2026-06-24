@@ -39,3 +39,51 @@ class AuthAPITest(APITestCase):
         )
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
         self.assertIn("access", login_response.data)
+
+
+class AdminUserAPITest(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="adminuser",
+            phone_number="254700000001",
+            password="testpass123",
+            role=User.Role.ADMIN,
+        )
+        self.user = User.objects.create_user(
+            username="customer",
+            phone_number="254700000002",
+            password="testpass123",
+        )
+
+    def test_admin_can_deactivate_user(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.patch(
+            f"/api/v1/auth/admin/users/{self.user.id}/",
+            {"is_active": False},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertFalse(self.user.is_active)
+
+    def test_customer_cannot_deactivate_user(self):
+        self.client.force_authenticate(user=self.user)
+        response = self.client.patch(
+            f"/api/v1/auth/admin/users/{self.admin.id}/",
+            {"is_active": False},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.is_active)
+
+    def test_admin_cannot_deactivate_self(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.patch(
+            f"/api/v1/auth/admin/users/{self.admin.id}/",
+            {"is_active": False},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.is_active)

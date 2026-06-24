@@ -8,6 +8,7 @@ from drf_spectacular.utils import extend_schema
 
 from apps.audit.services import log_audit
 from apps.core.permissions import IsAdminRole
+from apps.meters.models import Meter
 from apps.payments.models import Payment, Transaction
 from apps.payments.serializers import (
     GasTokenSerializer,
@@ -55,10 +56,6 @@ class TransactionListView(generics.ListAPIView):
         qs = Transaction.objects.select_related("meter", "payment").prefetch_related("gas_token")
         if user.role in ("admin",) or user.is_superuser:
             return qs
-        if user.role == "landlord":
-            return qs.filter(meter__landlord=user)
-        if user.role == "distributor":
-            return qs.all()
         return qs.filter(user=user)
 
     @extend_schema(tags=["Transactions"], summary="List transactions")
@@ -72,7 +69,11 @@ class TransactionDetailView(generics.RetrieveAPIView):
     lookup_field = "reference"
 
     def get_queryset(self):
-        return Transaction.objects.select_related("meter", "payment").prefetch_related("gas_token")
+        user = self.request.user
+        qs = Transaction.objects.select_related("meter", "payment").prefetch_related("gas_token")
+        if user.role == "admin" or user.is_superuser:
+            return qs
+        return qs.filter(user=user)
 
 
 class MeterLookupView(views.APIView):
@@ -80,10 +81,19 @@ class MeterLookupView(views.APIView):
 
     @extend_schema(tags=["Meters"], summary="Query Stron meter info and credit")
     def get(self, request, meter_number):
+        normalized_meter_number = meter_number.strip().upper()
+        user = request.user
+        meter_qs = Meter.objects.filter(meter_number=normalized_meter_number, is_active=True)
+        if not (user.role == "admin" or user.is_superuser):
+            meter_qs = meter_qs.filter(user=user)
+        meter = meter_qs.first()
+        if not meter:
+            return Response({"detail": "Meter not found."}, status=status.HTTP_404_NOT_FOUND)
+
         stron = StronVendingService()
         try:
-            info = stron.query_meter_info(meter_number)
-            credit = stron.query_meter_credit(meter_number)
+            info = stron.query_meter_info(meter.meter_number)
+            credit = stron.query_meter_credit(meter.meter_number)
             return Response({"meter_info": info, "credit_records": credit})
         except StronAPIError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)

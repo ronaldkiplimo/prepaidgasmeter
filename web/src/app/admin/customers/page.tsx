@@ -1,14 +1,22 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AppShell } from '@/components/app-shell'
-import { Card } from '@/components/ui'
+import { Button, Card } from '@/components/ui'
 import { adminApi } from '@/lib/api'
 
 export default function AdminCustomersPage() {
+  const queryClient = useQueryClient()
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: () => adminApi.users().then((r) => r.data.results || r.data),
+  })
+  const updateUserMutation = useMutation({
+    mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
+      adminApi.updateUser(userId, { is_active: isActive }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+    },
   })
 
   return (
@@ -35,7 +43,9 @@ export default function AdminCustomersPage() {
                   <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase">Email</th>
                   <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase">Role</th>
                   <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase">Verified</th>
+                  <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase">Status</th>
                   <th className="px-6 py-3 text-left font-medium text-gray-500 uppercase">Joined</th>
+                  <th className="px-6 py-3 text-right font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -63,8 +73,25 @@ export default function AdminCustomersPage() {
                         {user.is_verified ? 'Yes' : 'No'}
                       </span>
                     </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
+                        {user.is_active ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-gray-500">
                       {new Date(user.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Button
+                        variant="secondary"
+                        className={user.is_active ? 'text-red-700' : 'text-green-700'}
+                        disabled={updateUserMutation.isPending}
+                        onClick={() => updateUserMutation.mutate({ userId: user.id, isActive: !user.is_active })}
+                      >
+                        {user.is_active ? 'Deactivate' : 'Reactivate'}
+                      </Button>
                     </td>
                   </tr>
                 ))}

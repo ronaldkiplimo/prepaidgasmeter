@@ -44,7 +44,7 @@ class Meter(models.Model):
         blank=True,
         related_name="tenant_meters",
     )
-    meter_number = models.CharField(max_length=20, db_index=True)
+    meter_number = models.CharField(max_length=20, db_index=True, unique=True)
     meter_serial = models.CharField(max_length=50, blank=True)
     stron_customer_id = models.CharField(max_length=50, blank=True, db_index=True)
     customer_name = models.CharField(max_length=150, blank=True)
@@ -70,9 +70,7 @@ class Meter(models.Model):
     class Meta:
         db_table = "meters"
         ordering = ["-is_primary", "-created_at"]
-        unique_together = [("user", "meter_number")]
         indexes = [
-            models.Index(fields=["meter_number"]),
             models.Index(fields=["user", "is_active"]),
             models.Index(fields=["landlord", "status"]),
         ]

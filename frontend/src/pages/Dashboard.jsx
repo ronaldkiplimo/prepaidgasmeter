@@ -62,7 +62,7 @@ export default function Dashboard() {
             <Link to="/meters" className="text-sm text-primary-600 hover:underline">View all</Link>
           </div>
           {meters.length === 0 ? (
-            <p className="text-gray-500 text-sm">No meters registered. <Link to="/meters" className="text-primary-600">Add one</Link></p>
+            <p className="text-gray-500 text-sm">No meters have been assigned to your account yet.</p>
           ) : (
             <div className="space-y-3">
               {meters.slice(0, 3).map((m) => (

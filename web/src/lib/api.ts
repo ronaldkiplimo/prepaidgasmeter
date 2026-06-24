@@ -26,6 +26,7 @@ export const authApi = {
 export const metersApi = {
   list: () => api.get('/meters/'),
   create: (data: Record<string, unknown>) => api.post('/meters/', data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/meters/${id}/`, data),
   lookup: (meterNumber: string) => api.get(`/payments/meters/${meterNumber}/lookup/`),
 }
 
@@ -45,6 +46,7 @@ export const adminApi = {
   dashboard: () => api.get('/audit/dashboard/'),
   auditLogs: () => api.get('/audit/logs/'),
   users: () => api.get('/auth/admin/users/'),
+  updateUser: (id: string, data: Record<string, unknown>) => api.patch(`/auth/admin/users/${id}/`, data),
   meters: () => api.get('/meters/'),
   transactions: () => api.get('/payments/admin/transactions/'),
 }

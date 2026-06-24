@@ -11,9 +11,22 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             "id", "username", "email", "phone_number", "first_name", "last_name",
             "national_id", "role", "is_verified", "email_verified", "mfa_enabled",
-            "is_staff", "created_at",
+            "is_staff", "is_active", "created_at",
         )
-        read_only_fields = ("id", "is_verified", "email_verified", "is_staff", "created_at")
+        read_only_fields = ("id", "is_verified", "email_verified", "is_staff", "is_active", "created_at")
+
+
+class AdminUserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("role", "is_active")
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        target = self.instance
+        if target and request and target.pk == request.user.pk and attrs.get("is_active") is False:
+            raise serializers.ValidationError({"is_active": "Admins cannot deactivate their own account."})
+        return attrs
 
 
 class RegisterSerializer(serializers.ModelSerializer):

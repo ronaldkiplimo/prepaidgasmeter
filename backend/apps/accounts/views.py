@@ -9,7 +9,7 @@ from drf_spectacular.utils import extend_schema
 from apps.audit.services import log_audit
 from apps.core.permissions import IsAdminRole
 from .tokens import PhoneTokenObtainPairSerializer
-from .serializers import ProfileUpdateSerializer, RegisterSerializer, UserSerializer
+from .serializers import AdminUserUpdateSerializer, ProfileUpdateSerializer, RegisterSerializer, UserSerializer
 
 User = get_user_model()
 
@@ -129,3 +129,35 @@ class AdminUserListView(generics.ListAPIView):
     @extend_schema(tags=["Admin"], summary="Admin: list all users")
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class AdminUserDetailView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminRole]
+    queryset = User.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method in ("PUT", "PATCH"):
+            return AdminUserUpdateSerializer
+        return UserSerializer
+
+    @extend_schema(tags=["Admin"], summary="Admin: get or update a user")
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def perform_update(self, serializer):
+        before = {
+            "role": serializer.instance.role,
+            "is_active": serializer.instance.is_active,
+        }
+        user = serializer.save()
+        log_audit(
+            user=self.request.user,
+            action="USER_UPDATED",
+            resource_type="User",
+            resource_id=str(user.id),
+            details={
+                "before": before,
+                "after": {"role": user.role, "is_active": user.is_active},
+            },
+        )

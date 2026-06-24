@@ -32,9 +32,12 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-700 to-brand-900 px-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md p-8 shadow-md">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold">🔥 PrepaidGas Kenya</h1>
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-brand-600 text-white flex items-center justify-center text-lg font-bold">PG</div>
+            <h1 className="text-2xl font-bold text-gray-900">PrepaidGas Kenya</h1>
+          </div>
           <p className="mt-2 text-gray-500">Buy gas credit instantly via M-Pesa</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">

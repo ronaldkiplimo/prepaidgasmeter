@@ -34,8 +34,13 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-700 to-brand-900 px-4 py-8">
-      <Card className="w-full max-w-lg">
-        <h1 className="mb-6 text-center text-2xl font-bold">Create Account</h1>
+      <Card className="w-full max-w-lg p-8 shadow-md">
+        <div className="mb-6 text-center">
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-brand-600 text-white flex items-center justify-center text-lg font-bold">PG</div>
+            <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
+          </div>
+        </div>
         <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
           <Input placeholder="First name" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} required />
           <Input placeholder="Last name" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} required />

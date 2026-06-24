@@ -1,87 +1,30 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { AppShell } from '@/components/app-shell'
-import { Card, Button, Input, StatCard } from '@/components/ui'
+import { Card, StatCard } from '@/components/ui'
 import { metersApi } from '@/lib/api'
 
 export default function MetersPage() {
-  const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ meter_number: '', nickname: '', location: '' })
-  const queryClient = useQueryClient()
-
   const { data: meters, isLoading } = useQuery({
     queryKey: ['meters'],
     queryFn: () => metersApi.list().then((r) => r.data.results || r.data),
   })
 
-  const addMutation = useMutation({
-    mutationFn: (data: typeof form) => metersApi.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['meters'] })
-      setShowAdd(false)
-      setForm({ meter_number: '', nickname: '', location: '' })
-    },
-  })
-
   return (
     <AppShell>
-      <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-8">
         <div>
           <h1 className="text-2xl font-bold">My Meters</h1>
-          <p className="text-gray-500">Manage your registered gas meters</p>
+          <p className="text-gray-500">View gas meters assigned to your account</p>
         </div>
-        <Button onClick={() => setShowAdd(!showAdd)}>
-          {showAdd ? 'Cancel' : 'Add Meter'}
-        </Button>
       </div>
-
-      {showAdd && (
-        <Card className="mb-8 p-6">
-          <h2 className="mb-4 text-lg font-semibold">Register New Meter</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Meter Number</label>
-              <Input
-                placeholder="e.g. STRON123456"
-                value={form.meter_number}
-                onChange={(e) => setForm({ ...form, meter_number: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Nickname (optional)</label>
-              <Input
-                placeholder="Kitchen Meter"
-                value={form.nickname}
-                onChange={(e) => setForm({ ...form, nickname: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Location (optional)</label>
-              <Input
-                placeholder="Nairobi, Kenya"
-                value={form.location}
-                onChange={(e) => setForm({ ...form, location: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <Button
-              onClick={() => addMutation.mutate(form)}
-              disabled={addMutation.isPending || !form.meter_number}
-            >
-              {addMutation.isPending ? 'Adding...' : 'Register Meter'}
-            </Button>
-          </div>
-        </Card>
-      )}
 
       {isLoading ? (
         <Card className="p-8 text-center text-gray-500">Loading meters...</Card>
       ) : meters?.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="text-gray-500">No meters registered yet. Add your first meter above!</p>
+          <p className="text-gray-500">No meters have been assigned to your account yet.</p>
         </Card>
       ) : (
         <div className="grid gap-6 lg:grid-cols-2">

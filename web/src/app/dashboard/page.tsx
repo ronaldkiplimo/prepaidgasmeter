@@ -33,7 +33,7 @@ export default function DashboardPage() {
         <Card>
           <h2 className="mb-4 text-lg font-semibold">Meter Status</h2>
           {!primary ? (
-            <p className="text-gray-500">No meters registered. <Link href="/meters" className="text-brand-600">Add one</Link></p>
+            <p className="text-gray-500">No meters have been assigned to your account yet.</p>
           ) : (
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span>Meter</span><span className="font-mono">{primary.meter_number}</span></div>
