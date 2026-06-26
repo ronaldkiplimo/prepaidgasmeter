@@ -33,6 +33,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend,102.212.245.79
       DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/prepaidgas}
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
@@ -53,6 +54,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
+      ALLOWED_HOSTS: localhost,127.0.0.1,backend,102.212.245.79
       DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/prepaidgas}
       CELERY_BROKER_URL: redis://redis:6379/0
     volumes:
