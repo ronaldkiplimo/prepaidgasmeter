@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from .serializers import normalize_phone_number
+
 User = get_user_model()
 
 
@@ -8,7 +10,7 @@ class PhoneTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = "phone_number"
 
     def validate(self, attrs):
-        phone = attrs.get("phone_number")
+        phone = normalize_phone_number(attrs.get("phone_number"))
         password = attrs.get("password")
 
         try:

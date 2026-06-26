@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { authApi } from '@/lib/api'
+import { authApi, getApiErrorMessage } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 import { Button, Card, Input } from '@/components/ui'
 
@@ -26,7 +26,7 @@ export default function RegisterPage() {
       setAuth(data.user, data.tokens.access, data.tokens.refresh)
       router.push('/dashboard')
     } catch (err: unknown) {
-      setError('Registration failed. Check your details.')
+      setError(getApiErrorMessage(err, 'Registration failed. Check your details.'))
     } finally {
       setLoading(false)
     }

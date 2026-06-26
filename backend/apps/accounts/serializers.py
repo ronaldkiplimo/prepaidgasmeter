@@ -5,6 +5,15 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
+def normalize_phone_number(value):
+    normalized = (value or "").strip().replace(" ", "")
+    if normalized.startswith("0"):
+        normalized = "254" + normalized[1:]
+    elif normalized.startswith("+"):
+        normalized = normalized[1:]
+    return normalized
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -42,12 +51,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
     def validate_phone_number(self, value):
-        normalized = value.strip().replace(" ", "")
-        if normalized.startswith("0"):
-            normalized = "254" + normalized[1:]
-        elif normalized.startswith("+"):
-            normalized = normalized[1:]
-        return normalized
+        return normalize_phone_number(value)
 
     def validate(self, attrs):
         if attrs["password"] != attrs.pop("password_confirm"):

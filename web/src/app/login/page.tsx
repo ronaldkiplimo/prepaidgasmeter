@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { authApi } from '@/lib/api'
+import { authApi, getApiErrorMessage } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 import { Button, Card, Input } from '@/components/ui'
 
@@ -23,8 +23,8 @@ export default function LoginPage() {
       const { data } = await authApi.login(phone, password)
       setAuth(data.user, data.access, data.refresh)
       router.push(data.user.role === 'admin' ? '/admin' : '/dashboard')
-    } catch {
-      setError('Invalid phone number or password')
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'Invalid phone number or password'))
     } finally {
       setLoading(false)
     }
