@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { Button, Card, Input, StatCard } from '@/components/ui'
-import { metersApi, purchaseApi } from '@/lib/api'
+import { getApiErrorMessage, metersApi, purchaseApi } from '@/lib/api'
 import { useAuthStore } from '@/store/auth'
 
 const QUICK = [100, 200, 500, 1000, 2000, 5000]
@@ -17,15 +17,31 @@ export default function BuyGasPage() {
   const [phone, setPhone] = useState(user?.phone_number || '')
   const [preview, setPreview] = useState<Record<string, string> | null>(null)
   const [result, setResult] = useState<Record<string, string> | null>(null)
+  const [formError, setFormError] = useState('')
+  const canSubmit = Boolean(meterId && amount && Number(amount) > 0)
 
   const previewMutation = useMutation({
     mutationFn: () => purchaseApi.preview({ meter_id: meterId, amount: Number(amount) }).then((r) => r.data),
+    onMutate: () => {
+      setFormError('')
+      setResult(null)
+    },
     onSuccess: setPreview,
+    onError: (err) => {
+      setFormError(getApiErrorMessage(err, 'Could not preview this purchase.'))
+    },
   })
 
   const purchaseMutation = useMutation({
     mutationFn: () => purchaseApi.purchase({ meter_id: meterId, amount: Number(amount), phone_number: phone }).then((r) => r.data),
+    onMutate: () => {
+      setFormError('')
+      setResult(null)
+    },
     onSuccess: setResult,
+    onError: (err) => {
+      setFormError(getApiErrorMessage(err, 'Could not start the M-Pesa payment.'))
+    },
   })
 
   useEffect(() => {
@@ -45,6 +61,7 @@ export default function BuyGasPage() {
           <div>
             <label className="mb-1 block text-sm font-medium">Select Meter</label>
             <select className="input" value={meterId} onChange={(e) => setMeterId(e.target.value)}>
+              {!meters?.length && <option value="">No meters available</option>}
               {meters?.map((m: { id: string; meter_number: string; nickname: string }) => (
                 <option key={m.id} value={m.id}>{m.nickname || m.meter_number} ({m.meter_number})</option>
               ))}
@@ -63,10 +80,11 @@ export default function BuyGasPage() {
             </div>
           </div>
           <Input type="tel" placeholder="M-Pesa phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          {formError && <p className="text-sm text-red-600">{formError}</p>}
           <div className="flex gap-3">
-            <Button type="button" variant="secondary" className="flex-1" disabled={!amount || previewMutation.isPending}
+            <Button type="button" variant="secondary" className="flex-1" disabled={!canSubmit || previewMutation.isPending}
               onClick={() => previewMutation.mutate()}>Preview Units</Button>
-            <Button type="button" className="flex-1" disabled={!amount || purchaseMutation.isPending}
+            <Button type="button" className="flex-1" disabled={!canSubmit || purchaseMutation.isPending}
               onClick={() => purchaseMutation.mutate()}>Pay via M-Pesa</Button>
           </div>
         </Card>

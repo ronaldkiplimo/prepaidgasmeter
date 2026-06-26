@@ -7,6 +7,7 @@ from django.db import transaction as db_transaction
 from rest_framework import serializers
 
 from apps.audit.services import log_audit
+from apps.accounts.serializers import normalize_phone_number
 from apps.meters.models import Meter
 from apps.payments.models import Payment, Transaction
 from apps.payments.services.mpesa import MpesaService
@@ -100,12 +101,7 @@ class PurchaseTokenSerializer(serializers.Serializer):
     def validate_phone_number(self, value):
         if not value:
             return value
-        normalized = value.strip().replace(" ", "")
-        if normalized.startswith("0"):
-            normalized = "254" + normalized[1:]
-        elif normalized.startswith("+"):
-            normalized = normalized[1:]
-        return normalized
+        return normalize_phone_number(value)
 
     def create(self, validated_data):
         user = self.context["request"].user
