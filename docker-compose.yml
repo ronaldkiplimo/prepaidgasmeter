@@ -38,6 +38,7 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       CORS_ALLOWED_ORIGINS: http://102.212.245.79:3000,http://102.212.245.79,http://localhost:3000
+      MPESA_CALLBACK_URL: http://102.212.245.79:8000/api/v1/payments/mpesa/callback/
     volumes:
       - ./backend:/app
     ports:
@@ -57,6 +58,7 @@ services:
       ALLOWED_HOSTS: localhost,127.0.0.1,backend,102.212.245.79
       DATABASE_URL: ${DATABASE_URL:-postgres://postgres:postgres@db:5432/prepaidgas}
       CELERY_BROKER_URL: redis://redis:6379/0
+      MPESA_CALLBACK_URL: http://102.212.245.79:8000/api/v1/payments/mpesa/callback/
     volumes:
       - ./backend:/app
     depends_on:

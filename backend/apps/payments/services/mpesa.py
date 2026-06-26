@@ -25,13 +25,19 @@ class MpesaService:
         credentials = base64.b64encode(
             f"{self.consumer_key}:{self.consumer_secret}".encode()
         ).decode()
-        response = requests.get(
-            url,
-            headers={"Authorization": f"Basic {credentials}"},
-            timeout=30,
-        )
-        response.raise_for_status()
-        return response.json()["access_token"]
+        try:
+            response = requests.get(
+                url,
+                headers={"Authorization": f"Basic {credentials}"},
+                timeout=30,
+            )
+            response.raise_for_status()
+            return response.json()["access_token"]
+        except requests.RequestException as exc:
+            detail = self._safe_response_detail(getattr(exc, "response", None))
+            raise ValueError(f"M-Pesa token request failed{detail}.") from exc
+        except (KeyError, ValueError) as exc:
+            raise ValueError("M-Pesa token response did not include an access token.") from exc
 
     def _generate_password(self) -> tuple[str, str]:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -51,11 +57,13 @@ class MpesaService:
             not self.consumer_key
             or not self.consumer_secret
             or not self.passkey
+            or not self.callback_url
             or self.consumer_key.startswith("your-")
             or self.consumer_secret.startswith("your-")
             or self.passkey.startswith("your-")
+            or "your-domain.com" in self.callback_url
         ):
-            raise ValueError("M-Pesa credentials are not configured. Update backend/.env before purchasing.")
+            raise ValueError("M-Pesa credentials or callback URL are not configured. Update backend/.env before purchasing.")
 
         access_token = self._get_access_token()
         password, timestamp = self._generate_password()
@@ -75,17 +83,32 @@ class MpesaService:
             "TransactionDesc": transaction_desc,
         }
 
-        response = requests.post(
-            url,
-            json=payload,
-            headers={
-                "Authorization": f"Bearer {access_token}",
-                "Content-Type": "application/json",
-            },
-            timeout=30,
-        )
-        response.raise_for_status()
-        return response.json()
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as exc:
+            detail = self._safe_response_detail(getattr(exc, "response", None))
+            raise ValueError(f"M-Pesa STK push request failed{detail}.") from exc
+        except ValueError as exc:
+            raise ValueError("M-Pesa STK push response was not valid JSON.") from exc
+
+    @staticmethod
+    def _safe_response_detail(response) -> str:
+        if response is None:
+            return ""
+        body = response.text.strip()[:300] if response.text else ""
+        if body:
+            return f" with HTTP {response.status_code}: {body}"
+        return f" with HTTP {response.status_code}"
 
     @staticmethod
     def verify_callback(payload: dict) -> bool:

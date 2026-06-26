@@ -167,7 +167,7 @@ class PurchaseTokenSerializer(serializers.Serializer):
             txn.save(update_fields=["status", "failure_reason", "updated_at"])
             txn.payment.status = Payment.Status.FAILED
             txn.payment.save(update_fields=["status", "updated_at"])
-            raise serializers.ValidationError({"detail": "Failed to initiate M-Pesa payment."})
+            raise serializers.ValidationError({"detail": f"Failed to initiate M-Pesa payment: {exc}"})
 
         return txn
 
