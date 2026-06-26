@@ -63,9 +63,9 @@ services:
     build:
       context: ./web
       args:
-        NEXT_PUBLIC_API_URL: ""
+        NEXT_PUBLIC_API_URL: "http://102.212.245.79:8000"
     environment:
-      NEXT_PUBLIC_API_URL: ""
+      NEXT_PUBLIC_API_URL: "http://102.212.245.79:8000"
     ports:
       - "3000:3000"
     depends_on:
