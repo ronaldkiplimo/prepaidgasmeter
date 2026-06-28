@@ -9,7 +9,7 @@ from drf_spectacular.utils import extend_schema
 from apps.audit.services import log_audit
 from apps.core.permissions import IsAdminRole
 from .tokens import PhoneTokenObtainPairSerializer
-from .serializers import AdminUserUpdateSerializer, ProfileUpdateSerializer, RegisterSerializer, UserSerializer, normalize_phone_number
+from .serializers import AdminUserUpdateSerializer, ProfileUpdateSerializer, RegisterSerializer, UserSerializer
 
 User = get_user_model()
 
@@ -23,7 +23,7 @@ class RegisterView(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         if response.status_code == status.HTTP_201_CREATED:
-            user = User.objects.get(phone_number=normalize_phone_number(request.data.get("phone_number")))
+            user = User.objects.get(phone_number=request.data.get("phone_number"))
             refresh = RefreshToken.for_user(user)
             log_audit(
                 user=user,
@@ -56,7 +56,7 @@ class LoginView(TokenObtainPairView):
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         if response.status_code == status.HTTP_200_OK:
-            phone = normalize_phone_number(request.data.get("phone_number") or request.data.get("username"))
+            phone = request.data.get("phone_number") or request.data.get("username")
             try:
                 user = User.objects.get(phone_number=phone)
                 log_audit(

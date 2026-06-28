@@ -7,26 +7,6 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-export function getApiErrorMessage(error: unknown, fallback: string) {
-  if (!axios.isAxiosError(error)) return fallback
-
-  const data = error.response?.data
-  if (!data) return fallback
-  if (typeof data === 'string') return data
-  if (typeof data.detail === 'string') return data.detail
-
-  if (typeof data === 'object') {
-    const messages = Object.entries(data)
-      .flatMap(([field, value]) => {
-        const text = Array.isArray(value) ? value.join(' ') : String(value)
-        return text ? [`${field}: ${text}`] : []
-      })
-    if (messages.length) return messages.join(' ')
-  }
-
-  return fallback
-}
-
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('access_token')
