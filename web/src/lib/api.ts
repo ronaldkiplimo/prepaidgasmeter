@@ -2,6 +2,15 @@ import axios from 'axios'
 
 const API = process.env.NEXT_PUBLIC_API_URL || ''
 
+export const getApiErrorMessage = (error: any): string => {
+  return (
+    error?.response?.data?.detail ||
+    error?.response?.data?.message ||
+    error?.message ||
+    'An unexpected error occurred'
+  )
+}
+
 export const api = axios.create({
   baseURL: `${API}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
