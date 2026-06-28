@@ -40,6 +40,37 @@ class AuthAPITest(APITestCase):
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
         self.assertIn("access", login_response.data)
 
+    def test_register_normalizes_local_phone_number(self):
+        register_data = {
+            "username": "localuser",
+            "email": "local@example.com",
+            "phone_number": "0798765432",
+            "password": "securepass123",
+            "password_confirm": "securepass123",
+            "first_name": "Local",
+            "last_name": "User",
+        }
+        response = self.client.post("/api/v1/auth/register/", register_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["user"]["phone_number"], "254798765432")
+        self.assertIn("tokens", response.data)
+
+    def test_login_normalizes_plus_prefixed_phone_number_in_response_user_lookup(self):
+        User.objects.create_user(
+            username="plususer",
+            email="plus@example.com",
+            phone_number="254798765433",
+            password="securepass123",
+        )
+
+        response = self.client.post(
+            "/api/v1/auth/login/",
+            {"phone_number": "+254798765433", "password": "securepass123"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["user"]["phone_number"], "254798765433")
+
 
 class AdminUserAPITest(APITestCase):
     def setUp(self):

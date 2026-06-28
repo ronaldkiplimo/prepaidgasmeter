@@ -5,13 +5,14 @@ type AppRoutes = "/" | "/admin" | "/admin/customers" | "/admin/meters" | "/admin
 type PageRoutes = never
 type LayoutRoutes = "/"
 type RedirectRoutes = never
-type RewriteRoutes = "/api/[[...path]]"
+type RewriteRoutes = "/admin" | "/admin/[[...path]]" | "/api/[[...path]]" | "/media/[[...path]]" | "/static/[[...path]]"
 type Routes = AppRoutes | PageRoutes | LayoutRoutes | RedirectRoutes | RewriteRoutes
 
 
 interface ParamMap {
   "/": {}
   "/admin": {}
+  "/admin/[[...path]]": { "path"?: string[]; }
   "/admin/customers": {}
   "/admin/meters": {}
   "/admin/reports": {}
@@ -21,9 +22,11 @@ interface ParamMap {
   "/buy-gas": {}
   "/dashboard": {}
   "/login": {}
+  "/media/[[...path]]": { "path"?: string[]; }
   "/meters": {}
   "/profile": {}
   "/register": {}
+  "/static/[[...path]]": { "path"?: string[]; }
   "/tokens": {}
   "/transactions": {}
 }

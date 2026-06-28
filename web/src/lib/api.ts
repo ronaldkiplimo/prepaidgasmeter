@@ -3,12 +3,22 @@ import axios from 'axios'
 const API = process.env.NEXT_PUBLIC_API_URL || ''
 
 export const getApiErrorMessage = (error: any, defaultMessage = 'An unexpected error occurred'): string => {
-  return (
-    error?.response?.data?.detail ||
-    error?.response?.data?.message ||
-    error?.message ||
-    defaultMessage
-  )
+  const data = error?.response?.data
+  if (data?.detail) return data.detail
+  if (data?.message) return data.message
+
+  if (data && typeof data === 'object') {
+    const fieldErrors = Object.entries(data)
+      .flatMap(([field, value]) => {
+        const messages = Array.isArray(value) ? value : [value]
+        return messages.map((message) => `${field}: ${message}`)
+      })
+      .filter(Boolean)
+
+    if (fieldErrors.length) return fieldErrors.join(', ')
+  }
+
+  return error?.message || defaultMessage
 }
 
 export const api = axios.create({
