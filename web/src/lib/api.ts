@@ -2,12 +2,12 @@ import axios from 'axios'
 
 const API = process.env.NEXT_PUBLIC_API_URL || ''
 
-export const getApiErrorMessage = (error: any): string => {
+export const getApiErrorMessage = (error: any, defaultMessage = 'An unexpected error occurred'): string => {
   return (
     error?.response?.data?.detail ||
     error?.response?.data?.message ||
     error?.message ||
-    'An unexpected error occurred'
+    defaultMessage
   )
 }
 
