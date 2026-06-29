@@ -36,16 +36,16 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-600 to-primary-800 px-4 py-8">
-      <div className="card w-full max-w-lg">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-500 mt-2">Register to start topping up your gas meter</p>
+      <div className="card w-full max-w-lg p-8">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl font-bold text-primary-700">Create Account</h1>
+          <p className="text-gray-600 mt-2">Register to start topping up your gas meter</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-              <input name="first_name" className="input-field" value={form.first_name} onChange={handleChange} required />
+              <label className="block text-sm font-semibold text-gray-700 mb-1">First Name</label>
+                <input name="first_name" className="input-field" value={form.first_name} onChange={handleChange} required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
@@ -53,29 +53,29 @@ export default function Register() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Username</label>
             <input name="username" className="input-field" value={form.username} onChange={handleChange} required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
             <input name="email" type="email" className="input-field" value={form.email} onChange={handleChange} required />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Phone Number</label>
             <input name="phone_number" type="tel" className="input-field" placeholder="254712345678"
               value={form.phone_number} onChange={handleChange} required />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-              <input name="password" type="password" className="input-field" value={form.password} onChange={handleChange} required />
+              <label className="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+                <input name="password" type="password" className="input-field" value={form.password} onChange={handleChange} required />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Confirm</label>
               <input name="password_confirm" type="password" className="input-field" value={form.password_confirm} onChange={handleChange} required />
             </div>
           </div>
-          <button type="submit" className="btn-primary w-full" disabled={loading}>
+          <button type="submit" className="btn-primary w-full py-3" disabled={loading}>
             {loading ? 'Creating account...' : 'Register'}
           </button>
         </form>

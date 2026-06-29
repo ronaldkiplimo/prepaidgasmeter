@@ -51,7 +51,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
     def validate_phone_number(self, value):
-        return normalize_phone_number(value)
+        normalized = normalize_phone_number(value)
+        # Provide a friendlier validation error for duplicate phone numbers
+        if User.objects.filter(phone_number=normalized).exists():
+            raise serializers.ValidationError("Phone number already registered.")
+        return normalized
 
     def validate(self, attrs):
         if attrs["password"] != attrs.pop("password_confirm"):
