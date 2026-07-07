@@ -68,4 +68,5 @@ export const adminApi = {
   updateUser: (id: string, data: Record<string, unknown>) => api.patch(`/auth/admin/users/${id}/`, data),
   meters: () => api.get('/meters/'),
   transactions: () => api.get('/payments/admin/transactions/'),
+  integrations: () => api.get('/system/integrations/'),
 }

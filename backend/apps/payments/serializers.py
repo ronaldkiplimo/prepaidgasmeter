@@ -8,6 +8,7 @@ from rest_framework import serializers
 
 from apps.audit.services import log_audit
 from apps.accounts.serializers import normalize_phone_number
+from apps.core.config_check import mpesa_config_error, stron_config_error
 from apps.meters.models import Meter
 from apps.payments.models import Payment, Transaction
 from apps.payments.services.mpesa import MpesaService
@@ -49,6 +50,10 @@ class VendingPreviewSerializer(serializers.Serializer):
         return attrs
 
     def save(self):
+        stron_error = stron_config_error()
+        if stron_error:
+            raise serializers.ValidationError({"detail": stron_error})
+
         meter_number = self.validated_data["meter_number"]
         amount = self.validated_data["amount"]
         stron = StronVendingService()
@@ -109,6 +114,14 @@ class PurchaseTokenSerializer(serializers.Serializer):
         amount = validated_data["amount"]
         phone = validated_data.get("phone_number") or user.phone_number
 
+        mpesa_error = mpesa_config_error()
+        if mpesa_error:
+            raise serializers.ValidationError({"detail": mpesa_error})
+
+        stron_error = stron_config_error()
+        if stron_error:
+            raise serializers.ValidationError({"detail": stron_error})
+
         stron = StronVendingService()
         try:
             preview = stron.vending_preview(meter.meter_number, amount)
@@ -118,6 +131,18 @@ class PurchaseTokenSerializer(serializers.Serializer):
         reference = f"PGK{uuid.uuid4().hex[:12].upper()}"
         service_fee = Decimal("0")
         total = amount + service_fee
+
+        mpesa = MpesaService()
+        try:
+            stk = mpesa.initiate_stk_push(
+                phone_number=phone,
+                amount=float(total),
+                account_reference=reference,
+                transaction_desc=f"PrepaidGas {meter.meter_number}",
+            )
+        except Exception as exc:
+            logger.exception("STK Push failed before transaction creation")
+            raise serializers.ValidationError({"detail": f"Failed to initiate M-Pesa payment: {exc}"})
 
         with db_transaction.atomic():
             txn = Transaction.objects.create(
@@ -132,42 +157,22 @@ class PurchaseTokenSerializer(serializers.Serializer):
                 phone_number=phone,
                 status=Transaction.Status.PAYMENT_INITIATED,
             )
-            Payment.objects.create(
+            payment = Payment.objects.create(
                 transaction=txn,
                 amount=total,
                 phone_number=phone,
-                status=Payment.Status.INITIATED,
+                status=Payment.Status.PENDING,
+                checkout_request_id=stk.get("CheckoutRequestID", ""),
+                merchant_request_id=stk.get("MerchantRequestID", ""),
             )
 
-        mpesa = MpesaService()
-        try:
-            stk = mpesa.initiate_stk_push(
-                phone_number=phone,
-                amount=float(total),
-                account_reference=reference,
-                transaction_desc=f"PrepaidGas {meter.meter_number}",
-            )
-            payment = txn.payment
-            payment.checkout_request_id = stk.get("CheckoutRequestID", "")
-            payment.merchant_request_id = stk.get("MerchantRequestID", "")
-            payment.status = Payment.Status.PENDING
-            payment.save(update_fields=["checkout_request_id", "merchant_request_id", "status", "updated_at"])
-
-            log_audit(
-                user=user,
-                action="PAYMENT_INITIATED",
-                resource_type="Transaction",
-                resource_id=str(txn.id),
-                details={"reference": reference, "amount": str(total), "meter": meter.meter_number},
-            )
-        except Exception as exc:
-            logger.exception("STK Push failed for %s", reference)
-            txn.status = Transaction.Status.FAILED
-            txn.failure_reason = str(exc)
-            txn.save(update_fields=["status", "failure_reason", "updated_at"])
-            txn.payment.status = Payment.Status.FAILED
-            txn.payment.save(update_fields=["status", "updated_at"])
-            raise serializers.ValidationError({"detail": f"Failed to initiate M-Pesa payment: {exc}"})
+        log_audit(
+            user=user,
+            action="PAYMENT_INITIATED",
+            resource_type="Transaction",
+            resource_id=str(txn.id),
+            details={"reference": reference, "amount": str(total), "meter": meter.meter_number},
+        )
 
         return txn
 

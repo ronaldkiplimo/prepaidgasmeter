@@ -6,6 +6,8 @@ from datetime import datetime
 import requests
 from django.conf import settings
 
+from apps.core.config_check import mpesa_config_error
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,17 +55,9 @@ class MpesaService:
         transaction_desc: str,
     ) -> dict:
         """Initiate M-Pesa STK Push payment."""
-        if (
-            not self.consumer_key
-            or not self.consumer_secret
-            or not self.passkey
-            or not self.callback_url
-            or self.consumer_key.startswith("your-")
-            or self.consumer_secret.startswith("your-")
-            or self.passkey.startswith("your-")
-            or "your-domain.com" in self.callback_url
-        ):
-            raise ValueError("M-Pesa credentials or callback URL are not configured. Update backend/.env before purchasing.")
+        config_error = mpesa_config_error()
+        if config_error:
+            raise ValueError(config_error)
 
         access_token = self._get_access_token()
         password, timestamp = self._generate_password()

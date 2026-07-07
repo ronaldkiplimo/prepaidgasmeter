@@ -4,6 +4,8 @@ from decimal import Decimal
 import requests
 from django.conf import settings
 
+from apps.core.config_check import stron_config_error
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,8 +42,9 @@ class StronVendingService:
         self.vend_by_unit = settings.STRON_VEND_BY_UNIT
 
     def _credentials(self) -> dict:
-        if not all([self.company_name, self.username, self.password]):
-            raise StronAPIError("Stron credentials not configured. Set STRON_COMPANY_NAME, STRON_USERNAME, STRON_PASSWORD.")
+        config_error = stron_config_error()
+        if config_error:
+            raise StronAPIError(config_error)
         return {
             "CompanyName": self.company_name,
             "UserName": self.username,
