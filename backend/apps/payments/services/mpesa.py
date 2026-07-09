@@ -116,6 +116,7 @@ class MpesaService:
         """Parse M-Pesa STK callback into structured data."""
         stk_callback = payload.get("Body", {}).get("stkCallback", {})
         result_code = stk_callback.get("ResultCode")
+        normalized_result_code = str(result_code).strip()
         checkout_request_id = stk_callback.get("CheckoutRequestID")
         merchant_request_id = stk_callback.get("MerchantRequestID")
 
@@ -124,7 +125,7 @@ class MpesaService:
             "merchant_request_id": merchant_request_id,
             "result_code": result_code,
             "result_desc": stk_callback.get("ResultDesc", ""),
-            "success": result_code == 0,
+            "success": normalized_result_code == "0",
             "mpesa_receipt_number": "",
             "transaction_date": None,
             "phone_number": "",

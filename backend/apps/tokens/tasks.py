@@ -9,7 +9,7 @@ from apps.meters.models import Meter
 from apps.notifications.tasks import send_token_notification_task
 from apps.payments.models import Transaction
 from apps.tokens.models import GasToken
-from apps.tokens.services.stron import StronAPIError, StronVendingService
+from apps.tokens.services.stron import StronVendingService
 from apps.tokens.services.stron_logger import log_stron_call
 
 logger = logging.getLogger(__name__)
@@ -69,7 +69,8 @@ def generate_token_task(self, transaction_id: str):
 
             txn.status = Transaction.Status.COMPLETED
             txn.completed_at = timezone.now()
-            txn.save(update_fields=["status", "completed_at", "updated_at"])
+            txn.failure_reason = ""
+            txn.save(update_fields=["status", "failure_reason", "completed_at", "updated_at"])
 
         log_audit(
             user=txn.user,
@@ -81,11 +82,8 @@ def generate_token_task(self, transaction_id: str):
 
         send_token_notification_task.delay(str(token_obj.id))
 
-    except (StronAPIError, Exception) as exc:
+    except Exception as exc:
         logger.exception("Token generation failed for %s", transaction_id)
-        txn.status = Transaction.Status.FAILED
-        txn.failure_reason = f"Vending failed: {exc}"
-        txn.save(update_fields=["status", "failure_reason", "updated_at"])
         log_stron_call(
             action="vending_purchase",
             meter_number=txn.meter.meter_number,
@@ -95,4 +93,14 @@ def generate_token_task(self, transaction_id: str):
             user_id=str(txn.user_id),
             success=False,
         )
+
+        if self.request.retries >= self.max_retries:
+            txn.status = Transaction.Status.FAILED
+            txn.failure_reason = f"Vending failed: {exc}"
+            txn.save(update_fields=["status", "failure_reason", "updated_at"])
+            raise
+
+        txn.status = Transaction.Status.TOKEN_GENERATING
+        txn.failure_reason = f"Retrying vending: {exc}"
+        txn.save(update_fields=["status", "failure_reason", "updated_at"])
         raise self.retry(exc=exc)

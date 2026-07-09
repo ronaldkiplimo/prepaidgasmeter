@@ -1,5 +1,6 @@
 import logging
 
+from django.db import transaction as db_transaction
 from django.db.models import Count, Sum
 from django.utils import timezone
 from rest_framework import generics, permissions, status, views
@@ -21,6 +22,12 @@ from apps.tokens.services.stron import StronAPIError, StronVendingService
 from apps.tokens.tasks import generate_token_task
 
 logger = logging.getLogger(__name__)
+
+
+def schedule_token_generation(transaction_id: str) -> None:
+    """Queue token generation only after payment state is committed."""
+
+    db_transaction.on_commit(lambda: generate_token_task.delay(transaction_id))
 
 
 class VendingPreviewView(views.APIView):
@@ -121,9 +128,13 @@ class MpesaCallbackView(views.APIView):
             return Response({"ResultCode": 0, "ResultDesc": "Accepted"})
 
         if payment.status == Payment.Status.SUCCESS:
+            txn = payment.transaction
+            if not hasattr(txn, "gas_token") and txn.status in (
+                Transaction.Status.PAYMENT_CONFIRMED,
+                Transaction.Status.TOKEN_GENERATING,
+            ):
+                schedule_token_generation(str(txn.id))
             return Response({"ResultCode": 0, "ResultDesc": "Already processed"})
-
-        from django.db import transaction as db_transaction
 
         with db_transaction.atomic():
             payment.callback_payload = payload
@@ -147,7 +158,7 @@ class MpesaCallbackView(views.APIView):
                     resource_id=str(txn.id),
                     details={"mpesa_receipt": parsed["mpesa_receipt_number"], "amount": str(txn.amount)},
                 )
-                generate_token_task.delay(str(txn.id))
+                schedule_token_generation(str(txn.id))
             else:
                 payment.status = Payment.Status.FAILED
                 payment.save(update_fields=["status", "updated_at"])
