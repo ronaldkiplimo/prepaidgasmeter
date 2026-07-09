@@ -25,6 +25,7 @@ export default function Purchase() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
+  const [retryRequestedFor, setRetryRequestedFor] = useState('')
   const [form, setForm] = useState({
     meter_id: '', amount: '', phone_number: user?.phone_number || '',
   })
@@ -40,10 +41,32 @@ export default function Purchase() {
       .finally(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    if (!result?.reference || ['completed', 'failed', 'refunded'].includes(result.status)) return
+
+    const poll = window.setInterval(async () => {
+      try {
+        const { data } = await paymentsAPI.transaction(result.reference)
+        setResult(data)
+
+        if (data.status === 'payment_confirmed' && !data.token && retryRequestedFor !== data.reference) {
+          setRetryRequestedFor(data.reference)
+          const retry = await paymentsAPI.retryToken(data.reference)
+          setResult(retry.data)
+        }
+      } catch {
+        // Keep polling; transient network errors should not hide payment progress.
+      }
+    }, 3000)
+
+    return () => window.clearInterval(poll)
+  }, [result?.reference, result?.status, retryRequestedFor])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
     setResult(null)
+    setRetryRequestedFor('')
     try {
       const { data } = await paymentsAPI.purchase({
         meter_id: form.meter_id,
@@ -116,13 +139,34 @@ export default function Purchase() {
       )}
 
       {result && (
-        <div className="card mt-6 border-green-200 bg-green-50">
-          <h3 className="font-semibold text-green-800 mb-2">Payment Initiated</h3>
-          <p className="text-sm text-green-700">Reference: {result.reference}</p>
-          <p className="text-sm text-green-700">Status: {result.status.replace(/_/g, ' ')}</p>
-          <p className="text-sm text-green-600 mt-2">
-            Confirm the payment on your phone. Your gas token will be sent via SMS and email once payment is confirmed.
-          </p>
+        <div className={`card mt-6 ${result.status === 'failed' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
+          {result.status === 'completed' && result.token ? (
+            <>
+              <h3 className="font-semibold text-green-800 mb-2">Payment Successful</h3>
+              <p className="text-sm text-green-700">Token generated for {result.meter_number}</p>
+              <p className="font-mono text-lg font-bold text-green-900 bg-white rounded-md px-3 py-2 mt-3">{result.token.token}</p>
+              <p className="text-sm text-green-700 mt-2">{result.token.units} units · Ref: {result.reference}</p>
+            </>
+          ) : result.status === 'failed' ? (
+            <>
+              <h3 className="font-semibold text-red-800 mb-2">Payment Failed</h3>
+              <p className="text-sm text-red-700">{result.failure_reason || 'The transaction could not be completed.'}</p>
+            </>
+          ) : result.status === 'payment_confirmed' || result.status === 'token_generating' ? (
+            <>
+              <h3 className="font-semibold text-green-800 mb-2">Payment Confirmed</h3>
+              <p className="text-sm text-green-700">Generating your gas token now. Ref: {result.reference}</p>
+            </>
+          ) : (
+            <>
+              <h3 className="font-semibold text-green-800 mb-2">Payment Initiated</h3>
+              <p className="text-sm text-green-700">Reference: {result.reference}</p>
+              <p className="text-sm text-green-700">Status: {result.status.replace(/_/g, ' ')}</p>
+              <p className="text-sm text-green-600 mt-2">
+                Confirm the payment on your phone. Your gas token will be shown here once payment is confirmed.
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>

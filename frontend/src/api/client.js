@@ -58,6 +58,7 @@ export const paymentsAPI = {
   purchase: (data) => api.post('/payments/purchase/', data),
   transactions: (params) => api.get('/payments/transactions/', { params }),
   transaction: (ref) => api.get(`/payments/transactions/${ref}/`),
+  retryToken: (ref) => api.post(`/payments/transactions/${ref}/retry-token/`),
 }
 
 export const tokensAPI = {

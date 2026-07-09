@@ -1,7 +1,9 @@
 import logging
+from datetime import timedelta
 
 from django.db import transaction as db_transaction
 from django.db.models import Count, Sum
+from django.utils.dateparse import parse_datetime
 from django.utils import timezone
 from rest_framework import generics, permissions, status, views
 from rest_framework.response import Response
@@ -22,12 +24,40 @@ from apps.tokens.services.stron import StronAPIError, StronVendingService
 from apps.tokens.tasks import generate_token_task
 
 logger = logging.getLogger(__name__)
+TOKEN_GENERATION_REQUEUE_AFTER = timedelta(seconds=60)
 
 
 def schedule_token_generation(transaction_id: str) -> None:
     """Queue token generation only after payment state is committed."""
 
     db_transaction.on_commit(lambda: generate_token_task.delay(transaction_id))
+
+
+def queue_token_generation_if_missing(txn: Transaction, *, force: bool = False) -> bool:
+    if hasattr(txn, "gas_token"):
+        return False
+    if txn.status not in (Transaction.Status.PAYMENT_CONFIRMED, Transaction.Status.TOKEN_GENERATING):
+        return False
+
+    metadata = dict(txn.metadata or {})
+    queued_at_value = metadata.get("token_generation_queued_at")
+    queued_at = parse_datetime(queued_at_value) if queued_at_value else None
+    if queued_at and timezone.is_naive(queued_at):
+        queued_at = timezone.make_aware(queued_at)
+    if not force and queued_at and timezone.now() - queued_at < TOKEN_GENERATION_REQUEUE_AFTER:
+        return False
+
+    metadata["token_generation_queued_at"] = timezone.now().isoformat()
+    txn.metadata = metadata
+
+    update_fields = ["metadata", "updated_at"]
+    if txn.status == Transaction.Status.PAYMENT_CONFIRMED:
+        txn.status = Transaction.Status.TOKEN_GENERATING
+        update_fields.append("status")
+
+    txn.save(update_fields=update_fields)
+    schedule_token_generation(str(txn.id))
+    return True
 
 
 class VendingPreviewView(views.APIView):
@@ -83,6 +113,27 @@ class TransactionDetailView(generics.RetrieveAPIView):
         return qs.filter(user=user)
 
 
+class RetryTokenGenerationView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Transactions"], summary="Retry token generation for a confirmed payment")
+    def post(self, request, reference):
+        user = request.user
+        qs = Transaction.objects.select_related("meter", "payment").prefetch_related("gas_token")
+        if not (user.role == "admin" or user.is_superuser):
+            qs = qs.filter(user=user)
+
+        try:
+            txn = qs.get(reference=reference)
+        except Transaction.DoesNotExist:
+            return Response({"detail": "Transaction not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        queued = queue_token_generation_if_missing(txn, force=True)
+        if queued:
+            txn.refresh_from_db()
+        return Response({**TransactionSerializer(txn).data, "token_generation_queued": queued})
+
+
 class MeterLookupView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -129,11 +180,7 @@ class MpesaCallbackView(views.APIView):
 
         if payment.status == Payment.Status.SUCCESS:
             txn = payment.transaction
-            if not hasattr(txn, "gas_token") and txn.status in (
-                Transaction.Status.PAYMENT_CONFIRMED,
-                Transaction.Status.TOKEN_GENERATING,
-            ):
-                schedule_token_generation(str(txn.id))
+            queue_token_generation_if_missing(txn)
             return Response({"ResultCode": 0, "ResultDesc": "Already processed"})
 
         with db_transaction.atomic():
@@ -158,7 +205,7 @@ class MpesaCallbackView(views.APIView):
                     resource_id=str(txn.id),
                     details={"mpesa_receipt": parsed["mpesa_receipt_number"], "amount": str(txn.amount)},
                 )
-                schedule_token_generation(str(txn.id))
+                queue_token_generation_if_missing(txn, force=True)
             else:
                 payment.status = Payment.Status.FAILED
                 payment.save(update_fields=["status", "updated_at"])

@@ -104,7 +104,7 @@ class MpesaCallbackTokenGenerationTest(APITestCase):
 
         self.transaction.refresh_from_db()
         self.payment.refresh_from_db()
-        self.assertEqual(self.transaction.status, Transaction.Status.PAYMENT_CONFIRMED)
+        self.assertEqual(self.transaction.status, Transaction.Status.TOKEN_GENERATING)
         self.assertEqual(self.payment.status, Payment.Status.SUCCESS)
 
     @patch("apps.payments.views.generate_token_task.delay")
@@ -123,6 +123,22 @@ class MpesaCallbackTokenGenerationTest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         delay.assert_called_once_with(str(self.transaction.id))
+
+    @patch("apps.payments.views.generate_token_task.delay")
+    def test_retry_token_generation_endpoint_requeues_confirmed_transaction(self, delay):
+        self.transaction.status = Transaction.Status.PAYMENT_CONFIRMED
+        self.transaction.save(update_fields=["status", "updated_at"])
+        self.client.force_authenticate(user=self.user)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(f"/api/v1/payments/transactions/{self.transaction.reference}/retry-token/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["token_generation_queued"])
+        delay.assert_called_once_with(str(self.transaction.id))
+
+        self.transaction.refresh_from_db()
+        self.assertEqual(self.transaction.status, Transaction.Status.TOKEN_GENERATING)
 
     def _success_callback(self):
         return {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { Button, Card, Input, StatCard } from '@/components/ui'
@@ -9,22 +9,50 @@ import { useAuthStore } from '@/store/auth'
 
 const QUICK = [100, 200, 500, 1000, 2000, 5000]
 
+type PurchaseTransaction = {
+  reference: string
+  status: string
+  meter_number?: string
+  failure_reason?: string
+  token?: {
+    token: string
+    units?: string
+    status?: string
+  } | null
+}
+
 export default function BuyGasPage() {
   const user = useAuthStore((s) => s.user)
+  const queryClient = useQueryClient()
   const { data: meters } = useQuery({ queryKey: ['meters'], queryFn: () => metersApi.list().then((r) => r.data.results || r.data) })
   const [meterId, setMeterId] = useState('')
   const [amount, setAmount] = useState('')
   const [phone, setPhone] = useState(user?.phone_number || '')
   const [preview, setPreview] = useState<Record<string, string> | null>(null)
-  const [result, setResult] = useState<Record<string, string> | null>(null)
+  const [result, setResult] = useState<PurchaseTransaction | null>(null)
   const [formError, setFormError] = useState('')
+  const [retryRequestedFor, setRetryRequestedFor] = useState('')
+  const activeReference = result?.reference
   const canSubmit = Boolean(meterId && amount && Number(amount) > 0)
+
+  const transactionQuery = useQuery<PurchaseTransaction>({
+    queryKey: ['transaction', activeReference],
+    queryFn: () => purchaseApi.transaction(activeReference as string).then((r) => r.data),
+    enabled: Boolean(activeReference),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status
+      return status && ['completed', 'failed', 'refunded'].includes(status) ? false : 3000
+    },
+  })
+
+  const transaction = transactionQuery.data || result
 
   const previewMutation = useMutation({
     mutationFn: () => purchaseApi.preview({ meter_id: meterId, amount: Number(amount) }).then((r) => r.data),
     onMutate: () => {
       setFormError('')
       setResult(null)
+      setRetryRequestedFor('')
     },
     onSuccess: setPreview,
     onError: (err) => {
@@ -44,12 +72,32 @@ export default function BuyGasPage() {
     },
   })
 
+  const retryTokenMutation = useMutation({
+    mutationFn: (reference: string): Promise<PurchaseTransaction> => purchaseApi.retryToken(reference).then((r) => r.data),
+    onSuccess: (data) => {
+      setResult(data)
+      queryClient.setQueryData(['transaction', data.reference], data)
+    },
+  })
+
   useEffect(() => {
     if (meters?.length && !meterId) {
       const primary = meters.find((m: { is_primary: boolean }) => m.is_primary) || meters[0]
       setMeterId(primary.id)
     }
   }, [meters, meterId])
+
+  useEffect(() => {
+    if (
+      transaction?.reference &&
+      transaction.status === 'payment_confirmed' &&
+      !transaction.token &&
+      retryRequestedFor !== transaction.reference
+    ) {
+      setRetryRequestedFor(transaction.reference)
+      retryTokenMutation.mutate(transaction.reference)
+    }
+  }, [transaction?.reference, transaction?.status, transaction?.token, retryRequestedFor, retryTokenMutation])
 
   return (
     <AppShell>
@@ -97,10 +145,35 @@ export default function BuyGasPage() {
           </Card>
         )}
 
-        {result && (
-          <Card className="mt-6 border-green-200 bg-green-50">
-            <h3 className="font-semibold text-green-800">STK Push Sent</h3>
-            <p className="text-sm text-green-700">Ref: {result.reference} · Confirm on your phone</p>
+        {transaction && (
+          <Card className={`mt-6 ${transaction.status === 'failed' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
+            {transaction.status === 'completed' && transaction.token ? (
+              <>
+                <h3 className="font-semibold text-green-800">Payment Successful</h3>
+                <p className="text-sm text-green-700">Token generated for {transaction.meter_number}</p>
+                <p className="mt-3 rounded-md bg-white px-3 py-2 font-mono text-lg font-bold text-green-900">
+                  {transaction.token.token}
+                </p>
+                <p className="mt-2 text-sm text-green-700">
+                  {transaction.token.units} units · Ref: {transaction.reference}
+                </p>
+              </>
+            ) : transaction.status === 'failed' ? (
+              <>
+                <h3 className="font-semibold text-red-800">Payment Failed</h3>
+                <p className="text-sm text-red-700">{transaction.failure_reason || 'The transaction could not be completed.'}</p>
+              </>
+            ) : transaction.status === 'payment_confirmed' || transaction.status === 'token_generating' ? (
+              <>
+                <h3 className="font-semibold text-green-800">Payment Confirmed</h3>
+                <p className="text-sm text-green-700">Generating your gas token now. Ref: {transaction.reference}</p>
+              </>
+            ) : (
+              <>
+                <h3 className="font-semibold text-green-800">STK Push Sent</h3>
+                <p className="text-sm text-green-700">Ref: {transaction.reference} · Confirm on your phone</p>
+              </>
+            )}
           </Card>
         )}
       </div>

@@ -55,6 +55,8 @@ export const purchaseApi = {
   purchase: (data: { meter_id: string; amount: number; phone_number?: string }) =>
     api.post('/payments/purchase/', data),
   transactions: () => api.get('/payments/transactions/'),
+  transaction: (reference: string) => api.get(`/payments/transactions/${reference}/`),
+  retryToken: (reference: string) => api.post(`/payments/transactions/${reference}/retry-token/`),
 }
 
 export const tokensApi = { history: () => api.get('/tokens/history/') }
