@@ -44,7 +44,11 @@ def queue_token_generation_if_missing(txn: Transaction, *, force: bool = False) 
     queued_at = parse_datetime(queued_at_value) if queued_at_value else None
     if queued_at and timezone.is_naive(queued_at):
         queued_at = timezone.make_aware(queued_at)
-    if not force and queued_at and timezone.now() - queued_at < TOKEN_GENERATION_REQUEUE_AFTER:
+    if (
+        queued_at
+        and timezone.now() - queued_at < TOKEN_GENERATION_REQUEUE_AFTER
+        and (not force or txn.status == Transaction.Status.TOKEN_GENERATING)
+    ):
         return False
 
     metadata["token_generation_queued_at"] = timezone.now().isoformat()

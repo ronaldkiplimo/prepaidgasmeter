@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -139,6 +140,20 @@ class MpesaCallbackTokenGenerationTest(APITestCase):
 
         self.transaction.refresh_from_db()
         self.assertEqual(self.transaction.status, Transaction.Status.TOKEN_GENERATING)
+
+    @patch("apps.payments.views.generate_token_task.delay")
+    def test_retry_token_generation_does_not_requeue_recent_generating_transaction(self, delay):
+        self.transaction.status = Transaction.Status.TOKEN_GENERATING
+        self.transaction.metadata = {"token_generation_queued_at": timezone.now().isoformat()}
+        self.transaction.save(update_fields=["status", "metadata", "updated_at"])
+        self.client.force_authenticate(user=self.user)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.post(f"/api/v1/payments/transactions/{self.transaction.reference}/retry-token/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data["token_generation_queued"])
+        delay.assert_not_called()
 
     def _success_callback(self):
         return {

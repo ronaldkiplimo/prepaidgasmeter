@@ -1,6 +1,6 @@
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { AppShell } from '@/components/app-shell'
 import { Button, Card, Input, StatCard } from '@/components/ui'
@@ -23,7 +23,6 @@ type PurchaseTransaction = {
 
 export default function BuyGasPage() {
   const user = useAuthStore((s) => s.user)
-  const queryClient = useQueryClient()
   const { data: meters } = useQuery({ queryKey: ['meters'], queryFn: () => metersApi.list().then((r) => r.data.results || r.data) })
   const [meterId, setMeterId] = useState('')
   const [amount, setAmount] = useState('')
@@ -31,7 +30,6 @@ export default function BuyGasPage() {
   const [preview, setPreview] = useState<Record<string, string> | null>(null)
   const [result, setResult] = useState<PurchaseTransaction | null>(null)
   const [formError, setFormError] = useState('')
-  const [retryRequestedFor, setRetryRequestedFor] = useState('')
   const activeReference = result?.reference
   const canSubmit = Boolean(meterId && amount && Number(amount) > 0)
 
@@ -52,7 +50,6 @@ export default function BuyGasPage() {
     onMutate: () => {
       setFormError('')
       setResult(null)
-      setRetryRequestedFor('')
     },
     onSuccess: setPreview,
     onError: (err) => {
@@ -72,32 +69,12 @@ export default function BuyGasPage() {
     },
   })
 
-  const retryTokenMutation = useMutation({
-    mutationFn: (reference: string): Promise<PurchaseTransaction> => purchaseApi.retryToken(reference).then((r) => r.data),
-    onSuccess: (data) => {
-      setResult(data)
-      queryClient.setQueryData(['transaction', data.reference], data)
-    },
-  })
-
   useEffect(() => {
     if (meters?.length && !meterId) {
       const primary = meters.find((m: { is_primary: boolean }) => m.is_primary) || meters[0]
       setMeterId(primary.id)
     }
   }, [meters, meterId])
-
-  useEffect(() => {
-    if (
-      transaction?.reference &&
-      transaction.status === 'payment_confirmed' &&
-      !transaction.token &&
-      retryRequestedFor !== transaction.reference
-    ) {
-      setRetryRequestedFor(transaction.reference)
-      retryTokenMutation.mutate(transaction.reference)
-    }
-  }, [transaction?.reference, transaction?.status, transaction?.token, retryRequestedFor, retryTokenMutation])
 
   return (
     <AppShell>

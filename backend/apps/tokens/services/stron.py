@@ -10,9 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 class StronAPIError(Exception):
-    def __init__(self, message: str, response=None):
+    def __init__(self, message: str, response=None, retryable: bool = True):
         super().__init__(message)
         self.response = response
+        self.retryable = retryable
 
 
 class StronVendingService:
@@ -44,7 +45,7 @@ class StronVendingService:
     def _credentials(self) -> dict:
         config_error = stron_config_error()
         if config_error:
-            raise StronAPIError(config_error)
+            raise StronAPIError(config_error, retryable=False)
         return {
             "CompanyName": self.company_name,
             "UserName": self.username,
@@ -63,17 +64,53 @@ class StronVendingService:
                 timeout=timeout,
             )
             response.raise_for_status()
-            return response.json()
+            raw = response.json()
+            self._raise_for_api_error(raw)
+            return raw
         except requests.RequestException as exc:
             logger.exception("Stron API request failed: %s", endpoint_key)
             raise StronAPIError(str(exc)) from exc
 
+    def _raise_for_api_error(self, raw):
+        if not isinstance(raw, dict) or "ResultCode" not in raw:
+            return
+
+        result_code = raw.get("ResultCode")
+        if str(result_code) == "0":
+            return
+
+        reason = (
+            raw.get("Reason")
+            or raw.get("ResultDesc")
+            or raw.get("Message")
+            or f"result code {result_code}"
+        )
+        raise StronAPIError(
+            f"Stron API error: {reason} (code {result_code})",
+            response=raw,
+            retryable=False,
+        )
+
+    def _unwrap_result(self, data):
+        if isinstance(data, dict) and "Result" in data and "ResultCode" in data:
+            return data.get("Result")
+        return data
+
     def _normalize(self, data):
+        data = self._unwrap_result(data)
         if isinstance(data, list) and data:
             return data[0]
         if isinstance(data, dict):
             return data
         return {}
+
+    def _normalize_list(self, data):
+        data = self._unwrap_result(data)
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict) and data:
+            return [data]
+        return []
 
     def _extract(self, data: dict, *keys, default=None):
         for key in keys:
@@ -94,13 +131,12 @@ class StronVendingService:
     def query_meter_credit(self, meter_id: str) -> dict:
         payload = {**self._credentials(), "MeterId": meter_id}
         raw = self._post("query_meter_credit", payload, timeout=30)
-        data = raw if isinstance(raw, list) else [raw]
-        return data
+        return self._normalize_list(raw)
 
     def query_customer_credit(self, customer_id: str) -> dict:
         payload = {**self._credentials(), "CustomerId": customer_id}
         raw = self._post("query_customer_credit", payload, timeout=30)
-        return raw if isinstance(raw, list) else [raw]
+        return self._normalize_list(raw)
 
     def vending_preview(self, meter_id: str, amount: Decimal | float) -> dict:
         payload = {

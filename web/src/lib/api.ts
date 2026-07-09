@@ -1,11 +1,17 @@
-import axios from 'axios'
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 const API = process.env.NEXT_PUBLIC_API_URL || ''
 
-export const getApiErrorMessage = (error: any, defaultMessage = 'An unexpected error occurred'): string => {
-  const data = error?.response?.data
-  if (data?.detail) return data.detail
-  if (data?.message) return data.message
+type ApiErrorBody = Record<string, unknown>
+type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean }
+
+export const getApiErrorMessage = (error: unknown, defaultMessage = 'An unexpected error occurred'): string => {
+  const data = axios.isAxiosError(error) ? error.response?.data : null
+  if (data && typeof data === 'object') {
+    const body = data as ApiErrorBody
+    if (typeof body.detail === 'string') return body.detail
+    if (typeof body.message === 'string') return body.message
+  }
 
   if (data && typeof data === 'object') {
     const fieldErrors = Object.entries(data)
@@ -18,13 +24,47 @@ export const getApiErrorMessage = (error: any, defaultMessage = 'An unexpected e
     if (fieldErrors.length) return fieldErrors.join(', ')
   }
 
-  return error?.message || defaultMessage
+  if (error instanceof Error) return error.message
+  return defaultMessage
 }
 
 export const api = axios.create({
   baseURL: `${API}/api/v1`,
   headers: { 'Content-Type': 'application/json' },
 })
+
+let refreshRequest: Promise<string | null> | null = null
+
+const clearStoredAuth = () => {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('refresh_token')
+  localStorage.removeItem('prepaidgas-auth')
+}
+
+const redirectToLogin = () => {
+  if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    window.location.assign('/login')
+  }
+}
+
+const refreshAccessToken = async (): Promise<string | null> => {
+  const refresh = localStorage.getItem('refresh_token')
+  if (!refresh) return null
+
+  if (!refreshRequest) {
+    refreshRequest = axios.post(`${API}/api/v1/auth/token/refresh/`, { refresh })
+      .then(({ data }) => {
+        localStorage.setItem('access_token', data.access)
+        if (data.refresh) localStorage.setItem('refresh_token', data.refresh)
+        return data.access
+      })
+      .finally(() => {
+        refreshRequest = null
+      })
+  }
+
+  return refreshRequest
+}
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
@@ -33,6 +73,31 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const original = error.config as RetryableRequestConfig | undefined
+    if (error.response?.status === 401 && original && !original._retry) {
+      original._retry = true
+      try {
+        const access = await refreshAccessToken()
+        if (access) {
+          original.headers = original.headers || {}
+          original.headers.Authorization = `Bearer ${access}`
+          return api(original)
+        }
+      } catch {
+        clearStoredAuth()
+        redirectToLogin()
+      }
+      clearStoredAuth()
+      redirectToLogin()
+    }
+
+    return Promise.reject(error)
+  }
+)
 
 export const authApi = {
   login: (phone_number: string, password: string) =>

@@ -25,7 +25,6 @@ export default function Purchase() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState(null)
-  const [retryRequestedFor, setRetryRequestedFor] = useState('')
   const [form, setForm] = useState({
     meter_id: '', amount: '', phone_number: user?.phone_number || '',
   })
@@ -48,25 +47,18 @@ export default function Purchase() {
       try {
         const { data } = await paymentsAPI.transaction(result.reference)
         setResult(data)
-
-        if (data.status === 'payment_confirmed' && !data.token && retryRequestedFor !== data.reference) {
-          setRetryRequestedFor(data.reference)
-          const retry = await paymentsAPI.retryToken(data.reference)
-          setResult(retry.data)
-        }
       } catch {
         // Keep polling; transient network errors should not hide payment progress.
       }
     }, 3000)
 
     return () => window.clearInterval(poll)
-  }, [result?.reference, result?.status, retryRequestedFor])
+  }, [result?.reference, result?.status])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
     setResult(null)
-    setRetryRequestedFor('')
     try {
       const { data } = await paymentsAPI.purchase({
         meter_id: form.meter_id,

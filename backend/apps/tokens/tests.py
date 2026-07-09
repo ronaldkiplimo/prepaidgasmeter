@@ -66,6 +66,31 @@ class StronVendingServiceTest(SimpleTestCase):
         )
         self.assertEqual(result["token"], "9999-8888")
 
+    @patch("apps.tokens.services.stron.requests.post")
+    def test_wrapped_vending_response_unwraps_result(self, post):
+        post.return_value = self._response({
+            "ResultCode": 0,
+            "Result": {"Token": "5555-6666", "Total_unit": "4.5", "Total_paid": "50"},
+            "Reason": "",
+        })
+
+        result = StronVendingService().vending_purchase("58100711868", 50, "TXN123")
+
+        self.assertEqual(result["token"], "5555-6666")
+        self.assertEqual(result["token_units"], "4.5")
+        self.assertEqual(result["token_amount"], "50")
+
+    @patch("apps.tokens.services.stron.requests.post")
+    def test_api_error_result_code_raises_non_retryable_error(self, post):
+        payload = {"ResultCode": 1, "Result": {}, "Reason": "API Error"}
+        post.return_value = self._response(payload)
+
+        with self.assertRaisesMessage(StronAPIError, "Stron API error: API Error (code 1)") as exc:
+            StronVendingService().vending_purchase("58100711868", 50, "TXN123")
+
+        self.assertFalse(exc.exception.retryable)
+        self.assertEqual(exc.exception.response, payload)
+
     def test_missing_credentials_raise_clear_error(self):
         with override_settings(STRON_COMPANY_NAME="your-company-name"):
             with self.assertRaisesMessage(StronAPIError, "Stron Power API is not configured"):

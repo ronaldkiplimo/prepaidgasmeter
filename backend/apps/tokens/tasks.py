@@ -9,7 +9,7 @@ from apps.meters.models import Meter
 from apps.notifications.tasks import send_token_notification_task
 from apps.payments.models import Transaction
 from apps.tokens.models import GasToken
-from apps.tokens.services.stron import StronVendingService
+from apps.tokens.services.stron import StronAPIError, StronVendingService
 from apps.tokens.services.stron_logger import log_stron_call
 
 logger = logging.getLogger(__name__)
@@ -83,21 +83,30 @@ def generate_token_task(self, transaction_id: str):
         send_token_notification_task.delay(str(token_obj.id))
 
     except Exception as exc:
-        logger.exception("Token generation failed for %s", transaction_id)
+        if isinstance(exc, StronAPIError) and not exc.retryable:
+            logger.warning("Token generation failed for %s: %s", transaction_id, exc)
+        else:
+            logger.exception("Token generation failed for %s", transaction_id)
+
+        response_payload = getattr(exc, "response", None) or {}
         log_stron_call(
             action="vending_purchase",
             meter_number=txn.meter.meter_number,
-            request_payload={"MeterID": txn.meter.meter_number},
+            request_payload={"MeterID": txn.meter.meter_number, "Amount": str(txn.amount)},
+            response_payload=response_payload,
             error_message=str(exc),
             transaction=txn,
             user_id=str(txn.user_id),
             success=False,
         )
 
-        if self.request.retries >= self.max_retries:
+        retryable = getattr(exc, "retryable", True)
+        if not retryable or self.request.retries >= self.max_retries:
             txn.status = Transaction.Status.FAILED
             txn.failure_reason = f"Vending failed: {exc}"
             txn.save(update_fields=["status", "failure_reason", "updated_at"])
+            if not retryable:
+                return
             raise
 
         txn.status = Transaction.Status.TOKEN_GENERATING

@@ -51,6 +51,7 @@ class StronServiceWithLogging(StronVendingService):
                 action=action,
                 meter_number=meter_number,
                 request_payload=payload,
+                response_payload=getattr(exc, "response", None) or {},
                 error_message=str(exc),
                 transaction=self.transaction,
                 user_id=str(self.user.id) if self.user else None,
