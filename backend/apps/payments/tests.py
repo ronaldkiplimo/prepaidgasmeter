@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 from apps.meters.models import Meter
 from apps.payments.models import Payment, Transaction
 from apps.payments.services.mpesa import MpesaService
+from apps.tokens.services.stron import StronAPIError
 
 User = get_user_model()
 
@@ -173,6 +174,41 @@ class MpesaCallbackTokenGenerationTest(APITestCase):
                 }
             }
         }
+
+
+class PurchaseFlowFallbackTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="customer",
+            phone_number="254700000010",
+            password="testpass123",
+        )
+        self.meter = Meter.objects.create(user=self.user, meter_number="11111111")
+        self.client.force_authenticate(user=self.user)
+
+    @patch("apps.payments.serializers.MpesaService.initiate_stk_push")
+    @patch("apps.payments.serializers.StronVendingService.vending_preview", side_effect=StronAPIError("preview unavailable"))
+    def test_purchase_starts_even_when_stron_preview_fails(self, mock_preview, mock_stk):
+        mock_stk.return_value = {
+            "CheckoutRequestID": "ws_CO_123",
+            "MerchantRequestID": "mr_123",
+        }
+
+        response = self.client.post(
+            "/api/v1/payments/purchase/",
+            {
+                "meter_id": str(self.meter.id),
+                "amount": "100.00",
+                "phone_number": self.user.phone_number,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["status"], Transaction.Status.PAYMENT_INITIATED)
+        self.assertEqual(Transaction.objects.count(), 1)
+        mock_preview.assert_called_once()
+        mock_stk.assert_called_once()
 
 
 class PaymentMeterAccessTest(APITestCase):

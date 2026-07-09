@@ -9,6 +9,10 @@ import Purchase from './pages/Purchase'
 import Transactions from './pages/Transactions'
 import TokenHistory from './pages/TokenHistory'
 import AdminDashboard from './pages/AdminDashboard'
+import AdminCustomers from './pages/AdminCustomers'
+import AdminTransactions from './pages/AdminTransactions'
+import AdminReports from './pages/AdminReports'
+import AdminSettings from './pages/AdminSettings'
 import LoadingSpinner from './components/LoadingSpinner'
 
 function PrivateRoute({ children, adminOnly = false }) {
@@ -38,6 +42,10 @@ export default function App() {
         <Route path="transactions" element={<Transactions />} />
         <Route path="tokens" element={<TokenHistory />} />
         <Route path="admin" element={<PrivateRoute adminOnly><AdminDashboard /></PrivateRoute>} />
+        <Route path="admin/customers" element={<PrivateRoute adminOnly><AdminCustomers /></PrivateRoute>} />
+        <Route path="admin/transactions" element={<PrivateRoute adminOnly><AdminTransactions /></PrivateRoute>} />
+        <Route path="admin/reports" element={<PrivateRoute adminOnly><AdminReports /></PrivateRoute>} />
+        <Route path="admin/settings" element={<PrivateRoute adminOnly><AdminSettings /></PrivateRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

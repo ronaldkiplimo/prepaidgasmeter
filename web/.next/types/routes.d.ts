@@ -5,14 +5,13 @@ type AppRoutes = "/" | "/admin" | "/admin/customers" | "/admin/meters" | "/admin
 type PageRoutes = never
 type LayoutRoutes = "/"
 type RedirectRoutes = never
-type RewriteRoutes = "/admin" | "/admin/[[...path]]" | "/api/[[...path]]" | "/media/[[...path]]" | "/static/[[...path]]"
+type RewriteRoutes = "/api/[[...path]]" | "/media/[[...path]]" | "/static/[[...path]]"
 type Routes = AppRoutes | PageRoutes | LayoutRoutes | RedirectRoutes | RewriteRoutes
 
 
 interface ParamMap {
   "/": {}
   "/admin": {}
-  "/admin/[[...path]]": { "path"?: string[]; }
   "/admin/customers": {}
   "/admin/meters": {}
   "/admin/reports": {}

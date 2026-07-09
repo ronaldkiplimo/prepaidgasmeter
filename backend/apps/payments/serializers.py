@@ -123,10 +123,16 @@ class PurchaseTokenSerializer(serializers.Serializer):
             raise serializers.ValidationError({"detail": stron_error})
 
         stron = StronVendingService()
+        preview = {
+            "expected_units": 0,
+            "expected_credit": amount,
+            "vat": 0,
+            "raw_response": {},
+        }
         try:
             preview = stron.vending_preview(meter.meter_number, amount)
         except StronAPIError as exc:
-            raise serializers.ValidationError({"detail": f"Meter validation failed: {exc}"})
+            logger.warning("Stron preview failed for purchase; continuing with fallback values: %s", exc)
 
         reference = f"PGK{uuid.uuid4().hex[:12].upper()}"
         service_fee = Decimal("0")
