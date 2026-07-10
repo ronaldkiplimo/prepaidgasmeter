@@ -82,14 +82,16 @@ class StronVendingServiceTest(SimpleTestCase):
 
     @patch("apps.tokens.services.stron.requests.post")
     def test_api_error_result_code_raises_non_retryable_error(self, post):
-        payload = {"ResultCode": 1, "Result": {}, "Reason": "API Error"}
+        payload = {"ResultCode": 1, "Result": {"Message": "Invalid meter number"}, "Reason": "API Error"}
         post.return_value = self._response(payload)
 
-        with self.assertRaisesMessage(StronAPIError, "Stron API error: API Error (code 1)") as exc:
+        with self.assertRaises(StronAPIError) as exc:
             StronVendingService().vending_purchase("58100711868", 50, "TXN123")
 
         self.assertFalse(exc.exception.retryable)
         self.assertEqual(exc.exception.response, payload)
+        self.assertIn("API Error", str(exc.exception))
+        self.assertIn("Invalid meter number", str(exc.exception))
 
     def test_missing_credentials_raise_clear_error(self):
         with override_settings(STRON_COMPANY_NAME="your-company-name"):

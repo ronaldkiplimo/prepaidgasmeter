@@ -1,3 +1,4 @@
+import json
 import logging
 from decimal import Decimal
 
@@ -14,6 +15,24 @@ class StronAPIError(Exception):
         super().__init__(message)
         self.response = response
         self.retryable = retryable
+
+    def __str__(self) -> str:
+        base = super().__str__()
+        details = self._response_details(self.response)
+        if details:
+            return f"{base} | response: {details}"
+        return base
+
+    @staticmethod
+    def _response_details(response) -> str:
+        if not response:
+            return ""
+        if isinstance(response, (dict, list)):
+            try:
+                return json.dumps(response, default=str, sort_keys=True)
+            except TypeError:
+                return str(response)
+        return str(response)
 
 
 class StronVendingService:
@@ -85,6 +104,7 @@ class StronVendingService:
             or raw.get("Message")
             or f"result code {result_code}"
         )
+        logger.error("Stron API returned error response: %s", raw)
         raise StronAPIError(
             f"Stron API error: {reason} (code {result_code})",
             response=raw,
