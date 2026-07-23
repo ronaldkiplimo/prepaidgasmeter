@@ -138,6 +138,85 @@ class RetryTokenGenerationView(views.APIView):
         return Response({**TransactionSerializer(txn).data, "token_generation_queued": queued})
 
 
+class ReconcilePaymentView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Transactions"], summary="Check M-Pesa status and continue token generation")
+    def post(self, request, reference):
+        user = request.user
+        qs = Transaction.objects.select_related("meter", "payment").prefetch_related("gas_token")
+        if not (user.role == "admin" or user.is_superuser):
+            qs = qs.filter(user=user)
+
+        try:
+            txn = qs.get(reference=reference)
+        except Transaction.DoesNotExist:
+            return Response({"detail": "Transaction not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if txn.status in (Transaction.Status.COMPLETED, Transaction.Status.TOKEN_GENERATING):
+            return Response({**TransactionSerializer(txn).data, "payment_reconciled": False})
+
+        if not hasattr(txn, "payment") or not txn.payment.checkout_request_id:
+            return Response(
+                {"detail": "This transaction does not have an M-Pesa checkout request to check."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            mpesa_result = MpesaService().query_stk_push_status(txn.payment.checkout_request_id)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        result_code = str(mpesa_result.get("ResultCode", "")).strip()
+        result_desc = mpesa_result.get("ResultDesc", "")
+        metadata = dict(txn.metadata or {})
+        metadata["mpesa_stk_query"] = mpesa_result
+
+        if result_code != "0":
+            txn.metadata = metadata
+            txn.save(update_fields=["metadata", "updated_at"])
+            return Response(
+                {
+                    **TransactionSerializer(txn).data,
+                    "payment_reconciled": False,
+                    "mpesa_result": mpesa_result,
+                    "detail": result_desc or "M-Pesa has not confirmed this payment yet.",
+                }
+            )
+
+        with db_transaction.atomic():
+            payment = txn.payment
+            payment.status = Payment.Status.SUCCESS
+            payment.callback_payload = {
+                **(payment.callback_payload or {}),
+                "stk_query": mpesa_result,
+            }
+            payment.save(update_fields=["status", "callback_payload", "updated_at"])
+
+            txn.status = Transaction.Status.PAYMENT_CONFIRMED
+            txn.failure_reason = ""
+            txn.metadata = metadata
+            txn.save(update_fields=["status", "failure_reason", "metadata", "updated_at"])
+
+            log_audit(
+                user=txn.user,
+                action="PAYMENT_RECONCILED",
+                resource_type="Transaction",
+                resource_id=str(txn.id),
+                details={"reference": txn.reference, "mpesa_result": mpesa_result},
+            )
+            queue_token_generation_if_missing(txn, force=True)
+
+        txn.refresh_from_db()
+        return Response(
+            {
+                **TransactionSerializer(txn).data,
+                "payment_reconciled": True,
+                "mpesa_result": mpesa_result,
+            }
+        )
+
+
 class MeterLookupView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 

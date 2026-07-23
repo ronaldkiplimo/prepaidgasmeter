@@ -95,6 +95,42 @@ class MpesaService:
         except ValueError as exc:
             raise ValueError("M-Pesa STK push response was not valid JSON.") from exc
 
+    def query_stk_push_status(self, checkout_request_id: str) -> dict:
+        """Query Daraja for a previously initiated STK push status."""
+        config_error = mpesa_config_error()
+        if config_error:
+            raise ValueError(config_error)
+        if not checkout_request_id:
+            raise ValueError("Missing M-Pesa CheckoutRequestID.")
+
+        access_token = self._get_access_token()
+        password, timestamp = self._generate_password()
+        url = f"{self.base_url}/mpesa/stkpushquery/v1/query"
+        payload = {
+            "BusinessShortCode": self.shortcode,
+            "Password": password,
+            "Timestamp": timestamp,
+            "CheckoutRequestID": checkout_request_id,
+        }
+
+        try:
+            response = requests.post(
+                url,
+                json=payload,
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json",
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as exc:
+            detail = self._safe_response_detail(getattr(exc, "response", None))
+            raise ValueError(f"M-Pesa STK query failed{detail}.") from exc
+        except ValueError as exc:
+            raise ValueError("M-Pesa STK query response was not valid JSON.") from exc
+
     @staticmethod
     def _safe_response_detail(response) -> str:
         if response is None:
