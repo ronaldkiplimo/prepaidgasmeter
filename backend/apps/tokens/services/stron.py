@@ -47,7 +47,6 @@ class StronVendingService:
         "query_meter_credit": "QueryMeterCredit",
         "query_customer_credit": "QueryCustomerCredit",
         "vending_preview": "VendingMeterPreview",
-        "vending_purchase": "VendingMeterPurchase",
         "vending_meter": "VendingMeter",
         "vending_direct": "VendingMeterDirectly",
         "clear_credit": "ClearCredit",
@@ -56,10 +55,12 @@ class StronVendingService:
 
     def __init__(self):
         self.base_url = settings.STRON_BASE_URL.rstrip("/")
+        self.direct_base_url = settings.STRON_DIRECT_API_URL.rstrip("/")
         self.company_name = settings.STRON_COMPANY_NAME.strip()
         self.username = settings.STRON_USERNAME.strip()
         self.password = settings.STRON_PASSWORD.strip()
         self.vend_by_unit = settings.STRON_VEND_BY_UNIT
+        self.use_direct_vending = settings.STRON_USE_DIRECT_VENDING
 
     def _credentials(self) -> dict:
         config_error = stron_config_error()
@@ -71,9 +72,9 @@ class StronVendingService:
             "PassWord": self.password,
         }
 
-    def _post(self, endpoint_key: str, payload: dict, timeout: int = 60):
+    def _post(self, endpoint_key: str, payload: dict, timeout: int = 60, *, base_url: str | None = None):
         endpoint = self.ENDPOINTS[endpoint_key]
-        url = f"{self.base_url}/{endpoint}"
+        url = f"{(base_url or self.base_url).rstrip('/')}/{endpoint}"
         logger.info("Stron API %s -> %s", endpoint_key, url)
         try:
             response = requests.post(
@@ -177,15 +178,17 @@ class StronVendingService:
         }
 
     def vending_purchase(self, meter_id: str, amount: Decimal | float, transaction_reference: str = "") -> dict:
-        """Final vending call after successful M-Pesa payment."""
+        """Backward-compatible alias for the documented VendingMeter endpoint."""
+        return self.vending_meter(meter_id, amount, transaction_reference)
+
+    def vending_direct(self, meter_id: str, amount: Decimal | float, transaction_reference: str = "") -> dict:
         payload = {
             **self._credentials(),
-            "MeterID": meter_id,
+            "MeterId": meter_id,
             "Amount": self._format_amount(amount),
-            "is_vend_by_unit": str(self.vend_by_unit).lower(),
         }
-        logger.info("Stron VendingMeterPurchase meter=%s ref=%s", meter_id, transaction_reference)
-        raw = self._post("vending_purchase", payload)
+        logger.info("Stron VendingMeterDirectly meter=%s ref=%s", meter_id, transaction_reference)
+        raw = self._post("vending_direct", payload, base_url=self.direct_base_url)
         return self._parse_vending_response(raw, amount)
 
     def vending_meter(self, meter_id: str, amount: Decimal | float, transaction_reference: str = "") -> dict:
@@ -221,8 +224,10 @@ class StronVendingService:
         transaction_reference: str,
         phone_number: str = "",
     ) -> dict:
-        """Generate gas token after payment — uses VendingMeterPurchase."""
-        return self.vending_purchase(meter_number, amount, transaction_reference)
+        """Generate gas token after payment using the Stron manual's vending endpoints."""
+        if self.use_direct_vending:
+            return self.vending_direct(meter_number, amount, transaction_reference)
+        return self.vending_meter(meter_number, amount, transaction_reference)
 
     def _parse_vending_response(self, raw, amount) -> dict:
         data = self._normalize(raw)

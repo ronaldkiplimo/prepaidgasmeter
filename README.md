@@ -43,7 +43,7 @@ Customer enters meter + amount
   → Stron VendingMeterPreview (units/fees)
   → M-Pesa STK Push
   → Callback verification
-  → Stron VendingMeterPurchase
+  → Stron VendingMeter (or VendingMeterDirectly when configured)
   → Token saved → SMS + Email → Dashboard updated
 ```
 
@@ -85,11 +85,15 @@ prepaidgasmeter/
 
 ```env
 STRON_BASE_URL=http://www.server-newv.stronpower.com/api
+STRON_DIRECT_API_URL=http://www.server-api.stronpower.com/api
 STRON_COMPANY_NAME=your-company
 STRON_USERNAME=your-username
 STRON_PASSWORD=your-password
 STRON_VEND_BY_UNIT=false
+STRON_USE_DIRECT_VENDING=false
 ```
+
+Use `STRON_USE_DIRECT_VENDING=true` only when meters/customer pricing are not preloaded in Stron's vending management system and you want to call `VendingMeterDirectly`.
 
 ## Production Deployment
 

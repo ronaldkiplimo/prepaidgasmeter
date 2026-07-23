@@ -174,16 +174,15 @@ MPESA_BASE_URL = (
     else "https://sandbox.safaricom.co.ke"
 )
 
-# Stron Power Vending API v3.0.17
-STRON_BASE_URL = env("STRON_BASE_URL", default="http://www.server-newv.stronpower.com/api")
+# Stron Power Vending API
+STRON_API_URL = env("STRON_API_URL", default="http://www.server-newv.stronpower.com/api")
+STRON_DIRECT_API_URL = env("STRON_DIRECT_API_URL", default="http://www.server-api.stronpower.com/api")
+STRON_BASE_URL = env("STRON_BASE_URL", default=STRON_API_URL)
 STRON_COMPANY_NAME = env("STRON_COMPANY_NAME", default="")
 STRON_USERNAME = env("STRON_USERNAME", default="")
 STRON_PASSWORD = env("STRON_PASSWORD", default="")
 STRON_VEND_BY_UNIT = env.bool("STRON_VEND_BY_UNIT", default=False)
-
-# Legacy aliases
-STRON_API_URL = STRON_BASE_URL
-STRON_DIRECT_API_URL = STRON_BASE_URL
+STRON_USE_DIRECT_VENDING = env.bool("STRON_USE_DIRECT_VENDING", default=False)
 
 # SMS — Africa's Talking or Twilio
 SMS_PROVIDER = env("SMS_PROVIDER", default="africas_talking")

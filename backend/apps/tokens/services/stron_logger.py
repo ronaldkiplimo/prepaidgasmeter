@@ -81,11 +81,33 @@ class StronServiceWithLogging(StronVendingService):
 
     def vending_purchase(self, meter_id: str, amount, transaction_reference: str = ""):
         return self._call(
-            StronTransaction.Action.VENDING_PURCHASE,
+            StronTransaction.Action.VENDING_METER,
             meter_id,
             super().vending_purchase,
             meter_id,
             amount,
             transaction_reference,
             _payload={"MeterID": meter_id, "Amount": str(amount)},
+        )
+
+    def vending_meter(self, meter_id: str, amount, transaction_reference: str = ""):
+        return self._call(
+            StronTransaction.Action.VENDING_METER,
+            meter_id,
+            super().vending_meter,
+            meter_id,
+            amount,
+            transaction_reference,
+            _payload={"MeterID": meter_id, "Amount": str(amount)},
+        )
+
+    def vending_direct(self, meter_id: str, amount, transaction_reference: str = ""):
+        return self._call(
+            StronTransaction.Action.VENDING_DIRECT,
+            meter_id,
+            super().vending_direct,
+            meter_id,
+            amount,
+            transaction_reference,
+            _payload={"MeterId": meter_id, "Amount": str(amount)},
         )

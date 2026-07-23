@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=30)
 def generate_token_task(self, transaction_id: str):
-    """Vend gas credit via Stron VendingMeterPurchase after M-Pesa confirmation."""
+    """Vend gas credit via Stron after M-Pesa confirmation."""
     try:
         txn = Transaction.objects.select_related("meter", "user").get(id=transaction_id)
     except Transaction.DoesNotExist:
@@ -33,14 +33,16 @@ def generate_token_task(self, transaction_id: str):
 
     stron = StronVendingService()
     try:
-        result = stron.vending_purchase(
-            meter_id=txn.meter.meter_number,
+        result = stron.generate_token(
+            meter_number=txn.meter.meter_number,
             amount=float(txn.amount),
             transaction_reference=txn.reference,
+            phone_number=txn.phone_number,
         )
+        stron_action = "vending_direct" if stron.use_direct_vending else "vending_meter"
 
         log_stron_call(
-            action="vending_purchase",
+            action=stron_action,
             meter_number=txn.meter.meter_number,
             request_payload={"MeterID": txn.meter.meter_number, "Amount": str(txn.amount)},
             response_payload=result.get("raw_response", result),
@@ -89,8 +91,9 @@ def generate_token_task(self, transaction_id: str):
             logger.exception("Token generation failed for %s", transaction_id)
 
         response_payload = getattr(exc, "response", None) or {}
+        stron_action = "vending_direct" if getattr(stron, "use_direct_vending", False) else "vending_meter"
         log_stron_call(
-            action="vending_purchase",
+            action=stron_action,
             meter_number=txn.meter.meter_number,
             request_payload={"MeterID": txn.meter.meter_number, "Amount": str(txn.amount)},
             response_payload=response_payload,

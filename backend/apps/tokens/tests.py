@@ -11,10 +11,12 @@ from apps.tokens.services.stron import StronAPIError, StronVendingService
     STRON_USERNAME="Admin01",
     STRON_PASSWORD="123456",
     STRON_VEND_BY_UNIT=False,
+    STRON_DIRECT_API_URL="http://www.server-api.stronpower.com/api",
+    STRON_USE_DIRECT_VENDING=False,
 )
 class StronVendingServiceTest(SimpleTestCase):
     @patch("apps.tokens.services.stron.requests.post")
-    def test_generate_token_uses_vending_purchase_payload(self, post):
+    def test_generate_token_uses_documented_vending_meter_payload(self, post):
         post.return_value = self._response([{"Token": "1234-5678-9012", "Total_unit": "12.5", "Total_paid": "100"}])
 
         result = StronVendingService().generate_token(
@@ -25,7 +27,7 @@ class StronVendingServiceTest(SimpleTestCase):
         )
 
         post.assert_called_once_with(
-            "http://www.server-newv.stronpower.com/api/VendingMeterPurchase",
+            "http://www.server-newv.stronpower.com/api/VendingMeter",
             json={
                 "CompanyName": "Stron-Good",
                 "UserName": "Admin01",
@@ -40,6 +42,32 @@ class StronVendingServiceTest(SimpleTestCase):
         self.assertEqual(result["token"], "1234-5678-9012")
         self.assertEqual(result["token_units"], "12.5")
         self.assertEqual(result["token_amount"], "100")
+
+    @override_settings(STRON_USE_DIRECT_VENDING=True)
+    @patch("apps.tokens.services.stron.requests.post")
+    def test_generate_token_can_use_direct_vending_payload(self, post):
+        post.return_value = self._response([{"Token": "1234-5678-9012", "Total_unit": "12.5", "Total_paid": "100"}])
+
+        result = StronVendingService().generate_token(
+            meter_number="58100711868",
+            amount=100,
+            transaction_reference="TXN123",
+            phone_number="254712345678",
+        )
+
+        post.assert_called_once_with(
+            "http://www.server-api.stronpower.com/api/VendingMeterDirectly",
+            json={
+                "CompanyName": "Stron-Good",
+                "UserName": "Admin01",
+                "PassWord": "123456",
+                "MeterId": "58100711868",
+                "Amount": "100",
+            },
+            headers={"Content-Type": "application/json"},
+            timeout=60,
+        )
+        self.assertEqual(result["token"], "1234-5678-9012")
 
     @patch("apps.tokens.services.stron.requests.post")
     def test_vending_meter_uses_vending_meter_endpoint(self, post):
@@ -74,7 +102,7 @@ class StronVendingServiceTest(SimpleTestCase):
             "Reason": "",
         })
 
-        result = StronVendingService().vending_purchase("58100711868", 50, "TXN123")
+        result = StronVendingService().vending_meter("58100711868", 50, "TXN123")
 
         self.assertEqual(result["token"], "5555-6666")
         self.assertEqual(result["token_units"], "4.5")
@@ -86,7 +114,7 @@ class StronVendingServiceTest(SimpleTestCase):
         post.return_value = self._response(payload)
 
         with self.assertRaises(StronAPIError) as exc:
-            StronVendingService().vending_purchase("58100711868", 50, "TXN123")
+            StronVendingService().vending_meter("58100711868", 50, "TXN123")
 
         self.assertFalse(exc.exception.retryable)
         self.assertEqual(exc.exception.response, payload)

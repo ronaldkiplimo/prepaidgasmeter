@@ -43,7 +43,9 @@ def check_stron_config() -> dict:
         "configured": not missing,
         "missing": missing,
         "base_url": settings.STRON_BASE_URL,
+        "direct_api_url": settings.STRON_DIRECT_API_URL,
         "vend_by_unit": settings.STRON_VEND_BY_UNIT,
+        "use_direct_vending": settings.STRON_USE_DIRECT_VENDING,
     }
 
 

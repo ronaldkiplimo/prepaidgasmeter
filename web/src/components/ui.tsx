@@ -12,11 +12,12 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input className="input" {...props} />
 }
 
-export function StatCard({ label, value, accent }: { label: string; value: string | number; accent?: string }) {
+export function StatCard({ label, value, accent, helper }: { label: string; value: string | number; accent?: string; helper?: string }) {
   return (
     <Card>
-      <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
-      <p className={cn('mt-1 text-2xl font-bold', accent)}>{value}</p>
+      <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
+      <p className={cn('mt-2 text-2xl font-bold tracking-tight', accent)}>{value}</p>
+      {helper && <p className="mt-1 text-xs text-slate-500">{helper}</p>}
     </Card>
   )
 }

@@ -51,6 +51,7 @@ class StronTransaction(models.Model):
         VENDING_PREVIEW = "vending_preview", "Vending Preview"
         VENDING_PURCHASE = "vending_purchase", "Vending Purchase"
         VENDING_METER = "vending_meter", "Vending Meter"
+        VENDING_DIRECT = "vending_direct", "Vending Direct"
         CLEAR_CREDIT = "clear_credit", "Clear Credit"
         CLEAR_TAMPER = "clear_tamper", "Clear Tamper"
 
