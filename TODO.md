@@ -1,25 +1,12 @@
-# Fix: Stron Vending Returns Empty List Instead of Token ✅
+# TODO: Make Amount (KES) Text Box More Visible
 
-## Issue
-Error: `Vending failed: Stron did not return a token: []`
-- Stron API returns HTTP 200 with empty list `[]` instead of a token object
-- `_raise_for_api_error` silently ignored non-dict responses (like lists)
-- Error message was unhelpful for debugging
+## Steps
 
-## Completed
-
-- [x] Step 0: Read all relevant files and understand the codebase
-- [x] Step 1: Plan approved by user
-- [x] Step 2: Edit `backend/apps/tokens/services/stron.py`:
-  - [x] 2a. Fix `_raise_for_api_error` to handle list/empty/unexpected responses
-  - [x] 2b. Update `_parse_vending_response` with better validation and error messages
-  - [x] 2c. Add structured logging in `_post` for debugging (safe payload logging)
-  - [x] 2d. Add structured logging in `_parse_vending_response` (success + failure)
-  - [x] 2e. Fix Amount field type per v5.0.0 manual:
-       - VendingMeter: Amount must be number (100), not string ("100")
-       - VendingMeterDirectly: Amount must be string ("30") 
-       - VendingMeterPreview: Amount must be number
-- [x] Step 3: Update tests to match new Amount types
-- [x] Step 4: Run tests — all 6 token service tests pass ✅
-
+- [x] Step 1: Create TODO.md to track progress
+- [x] Step 2: Update `frontend/src/index.css` — strengthen `.input-field` base styling
+- [x] Step 3: Update `frontend/src/pages/Purchase.jsx` — strengthen border and shadow on the amount input
+- [x] Step 4: Update `web/src/app/globals.css` — strengthen `.input` base styling
+- [x] Step 5: Update `web/src/app/buy-gas/page.tsx` — strengthen border and shadow on the amount Input
+- [x] Step 6: Update `mobile/lib/screens/purchase_screen.dart` — strengthen TextField border
+- [x] Step 7: ✅ All changes are consistent across platforms
 

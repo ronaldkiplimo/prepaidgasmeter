@@ -123,7 +123,7 @@ export default function BuyGasPage() {
           </div>
           <div className="rounded-xl border-2 border-teal-200 bg-gradient-to-r from-teal-50 to-amber-50 p-5">
             <label className="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-200">Amount (KES)</label>
-            <Input type="number" className="text-center text-3xl font-extrabold border-teal-300 bg-white shadow-inner" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input type="number" className="text-center text-3xl font-extrabold border-teal-500 bg-white shadow-lg" value={amount} onChange={(e) => setAmount(e.target.value)} />
             <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
               {QUICK.map((a) => (
                 <button key={a} type="button" onClick={() => setAmount(String(a))}

@@ -111,7 +111,7 @@ export default function Purchase() {
               </span>
               <label className="text-lg font-bold text-gray-800">Amount (KES)</label>
             </div>
-            <input type="number" min="50" max="50000" className="input-field text-3xl font-extrabold text-center border-primary-300 bg-white shadow-inner"
+            <input type="number" min="50" max="50000" className="input-field text-3xl font-extrabold text-center border-primary-500 bg-white shadow-lg"
               value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
             <div className="flex flex-wrap gap-2 mt-3">
               {QUICK_AMOUNTS.map((amt) => (
