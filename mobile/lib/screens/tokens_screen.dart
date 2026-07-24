@@ -57,7 +57,18 @@ class _TokensScreenState extends State<TokensScreen> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Text('${t['token_units']} units · KES ${t['token_amount']}'),
+                        Text.rich(
+                          TextSpan(
+                            text: '${t['token_units']} units · ',
+                            style: const TextStyle(fontSize: 14),
+                            children: [
+                              TextSpan(
+                                text: 'KES ${t['token_amount']}',
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.teal.shade800),
+                              ),
+                            ],
+                          ),
+                        ),
                         Text('Ref: ${t['transaction_reference']}', style: const TextStyle(fontSize: 12)),
                         const SizedBox(height: 4),
                         Text(

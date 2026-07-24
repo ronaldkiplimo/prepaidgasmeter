@@ -42,7 +42,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 final t = _transactions[i];
                 return Card(
                   child: ListTile(
-                    title: Text('KES ${t['amount']}'),
+                    title: Text('KES ${t['amount']}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.teal.shade800)),
                     subtitle: Text('${t['meter_number']}\n${t['reference']}'),
                     isThreeLine: true,
                     trailing: Column(

@@ -75,7 +75,9 @@ class StronVendingService:
     def _post(self, endpoint_key: str, payload: dict, timeout: int = 60, *, base_url: str | None = None):
         endpoint = self.ENDPOINTS[endpoint_key]
         url = f"{(base_url or self.base_url).rstrip('/')}/{endpoint}"
-        logger.info("Stron API %s -> %s", endpoint_key, url)
+        # Log the request without sensitive credentials
+        safe_payload = {k: v for k, v in payload.items() if k.lower() not in ("password", "password")}
+        logger.info("Stron API %s -> %s payload=%s", endpoint_key, url, safe_payload)
         try:
             response = requests.post(
                 url,
@@ -85,29 +87,59 @@ class StronVendingService:
             )
             response.raise_for_status()
             raw = response.json()
-            self._raise_for_api_error(raw)
+            logger.debug("Stron API %s response: %s", endpoint_key, raw)
+            self._raise_for_api_error(raw, endpoint_key=endpoint_key)
             return raw
         except requests.RequestException as exc:
-            logger.exception("Stron API request failed: %s", endpoint_key)
+            logger.exception("Stron API request failed: %s (url=%s)", endpoint_key, url)
             raise StronAPIError(str(exc)) from exc
 
-    def _raise_for_api_error(self, raw):
-        if not isinstance(raw, dict) or "ResultCode" not in raw:
+    def _raise_for_api_error(self, raw, *, endpoint_key: str = ""):
+        # Dict with no ResultCode is a success payload (e.g. {"Token": "..."})
+        if isinstance(raw, dict) and "ResultCode" not in raw:
             return
 
-        result_code = raw.get("ResultCode")
-        if str(result_code) == "0":
+        if isinstance(raw, dict) and "ResultCode" in raw:
+            result_code = raw.get("ResultCode")
+            if str(result_code) == "0":
+                return
+
+            reason = (
+                raw.get("Reason")
+                or raw.get("ResultDesc")
+                or raw.get("Message")
+                or f"result code {result_code}"
+            )
+            logger.error("Stron API %s returned error response: %s", endpoint_key, raw)
+            raise StronAPIError(
+                f"Stron API error: {reason} (code {result_code})",
+                response=raw,
+                retryable=False,
+            )
+
+        # Handle non-dict responses (e.g. empty list []) from vending endpoints
+        if isinstance(raw, list):
+            if not raw:
+                logger.error("Stron API %s returned empty list: %s", endpoint_key, raw)
+                raise StronAPIError(
+                    f"Stron API returned an empty list — vending failed. "
+                    f"Check meter number, customer status, and Stron backend. "
+                    f"endpoint={endpoint_key}",
+                    response=raw,
+                    retryable=False,
+                )
+            # Non-empty list: check each item for ResultCode errors
+            for item in raw:
+                if isinstance(item, dict) and "ResultCode" in item:
+                    self._raise_for_api_error(item, endpoint_key=endpoint_key)
+            # List with items — no ResultCode errors found, likely success data
+            logger.debug("Stron API %s returned list with %d items (no errors)", endpoint_key, len(raw))
             return
 
-        reason = (
-            raw.get("Reason")
-            or raw.get("ResultDesc")
-            or raw.get("Message")
-            or f"result code {result_code}"
-        )
-        logger.error("Stron API returned error response: %s", raw)
+        # Other unexpected response types (string, number, etc.)
+        logger.error("Stron API %s returned unexpected type %s: %s", endpoint_key, type(raw).__name__, raw)
         raise StronAPIError(
-            f"Stron API error: {reason} (code {result_code})",
+            f"Stron API returned unexpected response type {type(raw).__name__}: {raw}",
             response=raw,
             retryable=False,
         )
@@ -163,7 +195,7 @@ class StronVendingService:
         payload = {
             **self._credentials(),
             "MeterID": meter_id,
-            "Amount": self._format_amount(amount),
+            "Amount": self._format_amount_number(amount),
             "is_vend_by_unit": str(self.vend_by_unit).lower(),
         }
         raw = self._post("vending_preview", payload, timeout=30)
@@ -185,7 +217,7 @@ class StronVendingService:
         payload = {
             **self._credentials(),
             "MeterId": meter_id,
-            "Amount": self._format_amount(amount),
+            "Amount": self._format_amount(amount),  # String per v5.0.0 manual
         }
         logger.info("Stron VendingMeterDirectly meter=%s ref=%s", meter_id, transaction_reference)
         raw = self._post("vending_direct", payload, base_url=self.direct_base_url)
@@ -195,7 +227,7 @@ class StronVendingService:
         payload = {
             **self._credentials(),
             "MeterID": meter_id,
-            "Amount": self._format_amount(amount),
+            "Amount": self._format_amount_number(amount),  # Number per v5.0.0 manual
             "is_vend_by_unit": str(self.vend_by_unit).lower(),
         }
         logger.info("Stron VendingMeter meter=%s ref=%s", meter_id, transaction_reference)
@@ -232,17 +264,78 @@ class StronVendingService:
     def _parse_vending_response(self, raw, amount) -> dict:
         data = self._normalize(raw)
         token = self._extract(data, "Token", "TOKEN", "token")
+
         if not token:
-            raise StronAPIError(f"Stron did not return a token: {raw}", response=raw)
-        return {
+            # Build a descriptive error message
+            response_type = type(raw).__name__
+            if isinstance(raw, (dict, list)):
+                response_summary = json.dumps(raw, default=str, sort_keys=True)
+            else:
+                response_summary = str(raw)
+
+            # Check if we can infer a reason from fields present in the response
+            reason_hint = ""
+            if isinstance(raw, dict):
+                reason_hint = (
+                    raw.get("Reason")
+                    or raw.get("ResultDesc")
+                    or raw.get("Message")
+                    or ""
+                )
+            elif isinstance(raw, list) and raw and isinstance(raw[0], dict):
+                reason_hint = (
+                    raw[0].get("Reason")
+                    or raw[0].get("ResultDesc")
+                    or raw[0].get("Message")
+                    or ""
+                )
+
+            if reason_hint:
+                error_msg = (
+                    f"Stron vending failed: {reason_hint}. "
+                    f"No token returned. Endpoint response type={response_type}"
+                )
+            else:
+                error_msg = (
+                    f"Stron vending failed: did not return a token. "
+                    f"Response type={response_type}, data={response_summary[:500]}. "
+                    f"Check meter number, customer status, and Stron backend connectivity."
+                )
+
+            logger.error("Stron _parse_vending_response failure: %s", error_msg)
+            raise StronAPIError(error_msg, response=raw)
+
+        parsed = {
             "token": str(token),
             "token_units": self._extract(data, "Total_unit", "Unit", "Units", default=0),
             "token_amount": self._extract(data, "Total_paid", "Amount", "AMOUNT", default=amount),
             "receipt_number": self._extract(data, "ReceiptNumber", "Gen_time", default=""),
             "raw_response": raw if isinstance(raw, (dict, list)) else {"result": raw},
         }
+        logger.info(
+            "Stron token generated successfully: meter=****%s token=****%s units=%s",
+            parsed.get("meter_number", "")[-4:] if parsed.get("meter_number") else "",
+            str(parsed["token"])[-4:] if len(str(parsed["token"])) > 4 else str(parsed["token"]),
+            parsed["token_units"],
+        )
+        return parsed
 
     @staticmethod
     def _format_amount(amount) -> str:
+        """Format amount as string for APIs that expect string Amount (e.g. VendingMeterDirectly).
+
+        Per v5.0.0 manual: VendingMeterDirectly Amount is a string ("30").
+        """
         value = Decimal(str(amount))
         return format(value.normalize(), "f")
+
+    @staticmethod
+    def _format_amount_number(amount) -> int | float:
+        """Format amount as a number for APIs that expect numeric Amount (e.g. VendingMeter).
+
+        Per v5.0.0 manual: VendingMeter Amount is a number (100, not "100").
+        """
+        value = float(amount)
+        if value == int(value):
+            return int(value)
+        return value

@@ -58,7 +58,7 @@ export default function TransactionsPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold">KES {txn.amount}</p>
+                  <p className="text-xl font-extrabold text-teal-700 bg-teal-50 px-3 py-1 rounded-lg inline-block">KES {txn.amount}</p>
                   {txn.token && (
                     <p className="text-sm text-green-600">{txn.token.units} units</p>
                   )}

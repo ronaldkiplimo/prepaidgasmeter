@@ -224,7 +224,7 @@ class _DashboardTabState extends State<_DashboardTab> {
           else
             ..._transactions.map((t) => Card(
               child: ListTile(
-                title: Text('KES ${t['amount']}'),
+                title: Text('KES ${t['amount']}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Colors.teal.shade800)),
                 subtitle: Text('${t['meter_number']} · ${t['reference']}'),
                 trailing: Chip(label: Text(t['status'], style: const TextStyle(fontSize: 10))),
               ),

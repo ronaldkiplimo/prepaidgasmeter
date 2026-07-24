@@ -97,18 +97,54 @@ class _PurchaseScreenState extends State<PurchaseScreen> {
             onChanged: (v) => setState(() => _selectedMeterId = v),
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _amountController,
-            decoration: const InputDecoration(labelText: 'Amount (KES)'),
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            children: _quickAmounts.map((a) => ActionChip(
-              label: Text('KES $a'),
-              onPressed: () => _amountController.text = '$a',
-            )).toList(),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.teal.shade200, width: 2),
+              gradient: LinearGradient(
+                colors: [Colors.teal.shade50, Colors.amber.shade50],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.monetization_on, color: Colors.teal.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Amount (KES)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.teal.shade800)),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _amountController,
+                  decoration: InputDecoration(
+                    labelText: 'Enter amount',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.teal.shade300)),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.teal.shade500, width: 2)),
+                  ),
+                  keyboardType: TextInputType.number,
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.teal.shade900, textBaseline: TextBaseline.alphabetic),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _quickAmounts.map((a) => ActionChip(
+                    label: Text('KES $a', style: TextStyle(fontWeight: FontWeight.bold)),
+                    backgroundColor: Colors.teal.shade50,
+                    side: BorderSide(color: Colors.teal.shade200),
+                    onPressed: () => _amountController.text = '$a',
+                  )).toList(),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           TextField(

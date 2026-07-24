@@ -33,7 +33,7 @@ class StronVendingServiceTest(SimpleTestCase):
                 "UserName": "Admin01",
                 "PassWord": "123456",
                 "MeterID": "58100711868",
-                "Amount": "100",
+                "Amount": 100,  # Number per v5.0.0 manual (not string)
                 "is_vend_by_unit": "false",
             },
             headers={"Content-Type": "application/json"},
@@ -86,7 +86,7 @@ class StronVendingServiceTest(SimpleTestCase):
                 "UserName": "Admin01",
                 "PassWord": "123456",
                 "MeterID": "58100711868",
-                "Amount": "30",
+                "Amount": 30,  # Number per v5.0.0 manual (not string)
                 "is_vend_by_unit": "false",
             },
             headers={"Content-Type": "application/json"},

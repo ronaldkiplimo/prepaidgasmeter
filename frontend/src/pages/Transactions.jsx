@@ -46,7 +46,11 @@ export default function Transactions() {
               <tr key={t.id} className="border-b border-gray-50 hover:bg-gray-50">
                 <td className="py-3 px-4 font-mono text-xs">{t.reference}</td>
                 <td className="py-3 px-4">{t.meter_number}</td>
-                <td className="py-3 px-4 font-medium">KES {t.amount}</td>
+                <td className="py-3 px-4">
+                  <span className="text-lg font-bold text-primary-700 bg-primary-50 px-3 py-1 rounded-lg inline-block">
+                    KES {t.amount}
+                  </span>
+                </td>
                 <td className="py-3 px-4">
                   <span className={`text-xs px-2 py-1 rounded-full ${statusColors[t.status] || 'bg-gray-100'}`}>
                     {t.status.replace(/_/g, ' ')}

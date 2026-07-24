@@ -81,7 +81,7 @@ export default function DashboardPage() {
                 <p className="font-mono font-semibold">{t.reference}</p>
                 <p className="capitalize text-slate-500">{t.status.replace('_', ' ')}</p>
               </div>
-              <span className="font-semibold">KES {t.amount}</span>
+              <span className="text-lg font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-lg">KES {t.amount}</span>
             </div>
           ))}
           {!txns?.length && <p className="text-sm text-slate-500">No purchases yet.</p>}

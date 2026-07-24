@@ -29,7 +29,7 @@ export default function TokenHistory() {
                 <p className="text-sm text-gray-500">Meter: {t.meter_number}</p>
                 <p className="font-mono text-lg font-bold text-primary-700 mt-1 tracking-wider">{t.token}</p>
                 <p className="text-sm text-gray-500 mt-1">
-                  {t.token_units} units · KES {t.token_amount} · Ref: {t.transaction_reference}
+                  {t.token_units} units · <span className="font-bold text-primary-700">KES {t.token_amount}</span> · Ref: {t.transaction_reference}
                 </p>
               </div>
               <span className={`text-xs px-2 py-1 rounded-full ${

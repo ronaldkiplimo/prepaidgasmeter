@@ -90,7 +90,7 @@ export default function Dashboard() {
               {transactions.map((t) => (
                 <div key={t.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium">KES {t.amount}</p>
+                    <p className="text-lg font-bold text-primary-700">KES {t.amount}</p>
                     <p className="text-sm text-gray-500">{t.meter_number} · {t.reference}</p>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full ${statusColors[t.status] || 'bg-gray-100 text-gray-800'}`}>

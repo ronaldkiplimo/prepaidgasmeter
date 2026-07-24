@@ -28,7 +28,7 @@ export default function AdminTransactions() {
               <p className="text-sm text-gray-500">{txn.meter_number || 'N/A'}</p>
             </div>
             <div className="text-right">
-              <p className="font-medium">KES {txn.amount}</p>
+              <p className="text-lg font-bold text-primary-700">KES {txn.amount}</p>
               <p className="text-sm text-gray-500 capitalize">{txn.status}</p>
             </div>
           </div>

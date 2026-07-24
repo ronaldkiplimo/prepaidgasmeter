@@ -101,23 +101,30 @@ export default function Purchase() {
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Amount (KES)</label>
-            <input type="number" min="50" max="50000" className="input-field text-2xl font-bold text-center"
+          <div className="bg-gradient-to-r from-primary-50 to-amber-50 rounded-xl p-5 border-2 border-primary-200">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary-100 text-primary-700">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.51-1.31c-.562-.649-1.413-1.076-2.353-1.253V5z" clipRule="evenodd" />
+                </svg>
+              </span>
+              <label className="text-lg font-bold text-gray-800">Amount (KES)</label>
+            </div>
+            <input type="number" min="50" max="50000" className="input-field text-3xl font-extrabold text-center border-primary-300 bg-white shadow-inner"
               value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
             <div className="flex flex-wrap gap-2 mt-3">
               {QUICK_AMOUNTS.map((amt) => (
                 <button key={amt} type="button"
                   onClick={() => setForm({ ...form, amount: String(amt) })}
-                  className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                    form.amount === String(amt) ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 hover:border-primary-400'
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold border-2 transition-all ${
+                    form.amount === String(amt) ? 'bg-primary-600 text-white border-primary-600 shadow-md scale-105' : 'border-primary-200 bg-primary-50 text-primary-700 hover:bg-primary-100 hover:border-primary-300'
                   }`}>
                   KES {amt}
                 </button>
               ))}
             </div>
           </div>
-
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">M-Pesa Phone Number</label>
             <input type="tel" className="input-field" placeholder="254712345678"
